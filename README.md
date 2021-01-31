@@ -13,3 +13,4 @@
 
 5. Zhang, Fang, et al. “Gene Expression Profile Analysis of Type 2 Diabetic Mouse Liver.” PLOS ONE, Public Library of Science, 2013, journals.plos.org/plosone/article?id=10.1371%2Fjournal.pone.0057766. 
 
+6. “GEO Accession Viewer.” National Center for Biotechnology Information, U.S. National Library of Medicine, www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107489. 
