@@ -1,5 +1,20 @@
 # Bartelo-ANGSD-Final-Project
 
+What each resource below tells us:
+
+1. Overall use of animals in diabetic research and why db/db is the best.
+
+2. Diabetes in humans
+
+3. Paper we are basing the whole project off of
+
+4. Different paper not necessary to include
+
+5. Different paper not necessary to include
+
+6. Where we get the samples from 
+
+7. Explains why we used some of the STAR parameters we did - e.g. sjdbOverhang = # of bp - 1
 
 ### Resources
 
