@@ -1752,7 +1752,7 @@ otation.gtf --sjdbOverhang 49</code></pre>
 </tr>
 </tbody>
 </table>
-<p>We actually ran the above STAR code in two bash scripts using slurm so that it would work more efficiently. With a lot of help from Merv, the final product is shown below which we passed as a job to slurm. The first is for genome creation and the second is for alignment.</p>
+<p>We actually ran the above STAR code in two bash scripts using slurm so that it would work more efficiently. With a lot of help from Merv, the final product is shown below which we passed as a job to slurm. He also told me that it was a better idea to put the created genome directory in my final_projects folder because it would be very large after completion of the indexing and would take a lot of time to transfer from the temporary folder to my project. We also did not use any of the files in the temporary folder, but instead use the files in the final_project directory. The first script below is for genome creation and the second is for alignment.</p>
 <pre class="bash"><code>#! /bin/bash -l
 
 #SBATCH --account=angsd_class

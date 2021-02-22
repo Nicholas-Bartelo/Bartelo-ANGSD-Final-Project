@@ -80,7 +80,7 @@ mutliqc /home/nib4003/ANGSD_2021_hw/final_project/
 
 We then export the results of multiqc to the computer using WinSCP as previously done throughout the course. By inspecting the multiqc, we see that there are potential problems with the GC content and overrepresented sequences of diabetes sample 3 reads, as well as the sequence duplication levels of all three diabetes samples. However, the results seem to not be too extreme. When I asked Merv about this, he agreed and said, "Since it seems to be high GC content reads that are duplicated, it could be that they simply ran the PCR amplification during library prep too long. This isn’t a concern at this step and there are strategies to collapse PCR duplicates later. At this stage I think it’d be sufficient to note it, and maybe try to figure out what reads are overrepresented, i.e., BLAST some of their sequences." Therefore, we note that we need to look into BLAST later on and we can proceed with the STAR alignment.
 
-Now that we have the reference genome and annotations, and we know there are no major problems with our initial reads, we can make the genome index in order to align the reads. We first have to import STAR using `spack load star@2.7.0e` and samtools using `spack load samtools@1.9%gcc@6.3.0`. The generation of the genome index is done using the command below. 
+Now that we have the reference genome and annotations, and we know there are no major problems with our initial reads, we can make the genome index in order to align the reads. We first have to import STAR using `spack load star@2.7.0e` and samtools using `spack load samtools@1.9%gcc@6.3.0`. The generation of the genome index is done using the command below.
 
 ```{bash,eval=FALSE}
 STAR --runMode genomeGenerate --runThreadN 16 --genomeDir /scratch/nib4003_6613733/star
@@ -108,7 +108,7 @@ jM | Intron motifs for all junctions
 jI | Start and End of introns for all junctions
 MC | CIGAR string for mate/next segment
 
-We actually ran the above STAR code in two bash scripts using slurm so that it would work more efficiently. With a lot of help from Merv, the final product is shown below which we passed as a job to slurm. The first is for genome creation and the second is for alignment. 
+We actually ran the above STAR code in two bash scripts using slurm so that it would work more efficiently. With a lot of help from Merv, the final product is shown below which we passed as a job to slurm. He also told me that it was a better idea to put the created genome directory in my final_projects folder because it would be very large after completion of the indexing and would take a lot of time to transfer from the temporary folder to my project. We also did not use any of the files in the temporary folder, but instead use the files in the final_project directory. The first script below is for genome creation and the second is for alignment. 
 
 ```{bash,eval=FALSE}
 #! /bin/bash -l
