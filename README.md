@@ -1,6 +1,27 @@
 # Bartelo-ANGSD-Final-Project
 
-What each resource below tells us:
+## What we have done so far 3/9
+
+1. Downloaded all 9 sample reads into SCU
+
+2. Ran FastQC on all 9 fastq files and made multiQC report. There seems to be possible problems with the diabetes mice.
+
+3. Used primary assembly .gtf and .fa file to create reference genome for STAR alignment. We used the primary assembly because Merv told us it was a good idea and a better 
+explanation can be found in "Download and begin processing Alignment" files. 
+
+4. Aligned reads to reference genome using STAR.
+
+5. Ran bamQC for all files but still need to look at resulting files and see if there are additional problems found.
+
+THINGS TO DO NEXT:
+
+1. Use QoRTs tool outlined in "Alignment QC" on all files and see if we need to run SortMeRNA by looking at output or if there are other problems with the aligned reads.
+
+2. Use featureCounts on all samples, outlined in "Counting reads", and read the results into R following the class notes shown here and create all figures to compare samples: https://medcornell.instructure.com/courses/1787065/files/118484018?wrap=1 or also C:\Users\nicky\OneDrive\Documents\ANGSD-R-In_Class\2-24
+
+3. Look at "RNA-seq Data Analysis 2" to figure out how to make heatmaps and use PCA. This file uses the same objects as used in step 2 above so it can be incorporated into one file.
+
+## What each resource below tells us:
 
 1. Overall use of animals in diabetic research and why db/db is the best.
 
