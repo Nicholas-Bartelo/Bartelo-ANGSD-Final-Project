@@ -1,7 +1,7 @@
 ---
 title: "Download and Begin Processing Data"
 author: "Nick Bartelo"
-date: "2/21/2021"
+date: "3/17/2021"
 output:
   html_document:
     df_print: paged
@@ -162,7 +162,7 @@ STAR --runMode alignReads --runThreadN 16 --genomeDir /home/nib4003/ANGSD_2021_h
 exit
 ```
 
-Here, we also create a temporary directory to keep the STAR files for more efficiency using `--outTmpDir /scratch/nib4003/STARtmp`. This folder cannot be created before running the script so we ensure this before running STAR with the command `rm -rf /scratch/nib4003/STARtmp`. The genome indexing script take a long time (9 hours!!!) to run because it is a mammalian genome. STAR alignment also took a couple of hours for just one alignment, the first diabetes sample. We created folders for the STAR alignments titled for each sample. For example, using command `mkdir diabetes_sample1_aligned_star_reads`, we stored all our files specific to the diabetes 1 sample.
+Here, we also create a temporary directory to keep the STAR files for more efficiency using `--outTmpDir /scratch/nib4003/STARtmp`. This folder cannot be created before running the script so we ensure this before running STAR with the command `rm -rf /scratch/nib4003/STARtmp`. The genome indexing script take a long time (9 hours!!!) to run because it is a mammalian genome. STAR alignment also took a couple of hours for just one alignment, the first diabetes sample. We created folders for the STAR alignments titled for each sample. For example, using command `mkdir diabetes_sample1_aligned_star_reads`, we stored all our files specific to the diabetes 1 sample. Since each file takes so long to align, we did not want to continually use the computational resources available since others need to align their files as well. Therefore, we ran alignment for one file at a time using a different bash script for each file during times when it was most likely that other students were not using the SCU. To run a new batch script on a different fastq file, we only had to change the name of the .fastq.gz file (e.g. diabetes_sample1 -> diabetes_sample2) and the outfile prefix name (e.g. diabetes_sample1_alignments. -> diabetes_sample2_alignments.). This allowed for efficient reusing of scripts to easily align all files. 
 
 We next run bamqc on the output BAM file from STAR to see the status of the alignments. We export the HTML to the computer using WinSCP and find that there is one issue with the aligned reads, the mapping quality distribution. The MAPQ score is 3 or less for about 35% of the reads, which a score of 3 means that the read is found to be aligned to 2 different locations, resulting in a low confidence of where it is actually mapped to. Therefore, after talking with Merv, we will be learning what to do with this situation after talking about quantification. The code we used to run bamqc is shown below.
 
