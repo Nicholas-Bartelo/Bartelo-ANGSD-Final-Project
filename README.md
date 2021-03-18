@@ -1,6 +1,6 @@
 # Bartelo-ANGSD-Final-Project
 
-## What we have done so far 3/9
+## What we have done so far 3/20
 
 1. Downloaded all 9 sample reads into SCU
 
@@ -17,11 +17,21 @@ explanation can be found in "Download and begin processing Alignment" files.
 
 THINGS TO DO NEXT:
 
-1. Use QoRTs tool outlined in "Alignment QC" on all files and see if we need to run SortMeRNA by looking at output or if there are other problems with the aligned reads.
+1. Look at IGV Browser to find out if the reads are stranded.
+
+3. Run RESeQC since compatible with multiqc.
 
 2. Use featureCounts on all samples, outlined in "Counting reads", and read the results into R following the class notes shown here and create all figures to compare samples: https://medcornell.instructure.com/courses/1787065/files/118484018?wrap=1 or also C:\Users\nicky\OneDrive\Documents\ANGSD-R-In_Class\2-24
 
 3. Look at "RNA-seq Data Analysis 2" to figure out how to make heatmaps and use PCA. This file uses the same objects as used in step 2 above so it can be incorporated into one file.
+
+## Future Questions To Consider:
+
+1. Can we find gender of mice and see if there are differences in expression levels between different genders? This could result in a new insight into the paper if one gender has more expression than another.
+
+2. Library protocol used was ribo zero gold. We have found that there are more overrepresented sequences in diabetes mice than the others. This could be due to this protocol not being run perfectly and therefore resulting in a higher chance of rRNA left over or can also result in high numbers of long non-coding RNA or other non-coding RNA. We need to use BLAST to look at the top sequences, mostly in diabetes sample 3 which failed the overrepresented sequences multiqc output, to see where these sequences are coming from. If they are rRNA, we can potentially use sortMeRNA to get rid of them. The bias could also be due to an increased number of PCR cycles which amplifies GC content and duplicates more sequences, seen in our diabetes sample 3 multiqc.
+
+3. Overall Good Question: Are differentially expressed genes just due to high overrepresented sequences we find? 
 
 ## What each resource below tells us:
 
