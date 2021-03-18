@@ -13,9 +13,9 @@ explanation can be found in "Download and begin processing Alignment" files.
 
 5. Ran bamQC for all files but still need to look at resulting files and see if there are additional problems found.
 
-THINGS TO DO NEXT:
+6. Ran QoRTs on all files.
 
-1. Transfer .html files for fastqc and bamqc to this repository.
+THINGS TO DO NEXT:
 
 1. Use QoRTs tool outlined in "Alignment QC" on all files and see if we need to run SortMeRNA by looking at output or if there are other problems with the aligned reads.
 
