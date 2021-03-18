@@ -1,0 +1,13 @@
+Status	/home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/diabetes_sample1_alignments.Aligned.sortedByCoord.out.bam	/home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/diabetes_sample2_alignments.Aligned.sortedByCoord.out.bam	/home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/diabetes_sample3_alignments.Aligned.sortedByCoord.out.bam	/home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/heterozygous_sample1_alignments.Aligned.sortedByCoord.out.bam	/home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/heterozygous_sample2_alignments.Aligned.sortedByCoord.out.bam	/home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/heterozygous_sample3_alignments.Aligned.sortedByCoord.out.bam	/home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/wt_sample1_alignments.Aligned.sortedByCoord.out.bam	/home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/wt_sample2_alignments.Aligned.sortedByCoord.out.bam	/home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/wt_sample3_alignments.Aligned.sortedByCoord.out.bam
+Assigned	9800775	10087728	8935235	12230337	11683781	12285903	12055606	11368128	10052167
+Unassigned_Unmapped	0	0	0	0	0	0	0	0	0
+Unassigned_MappingQuality	0	0	0	0	0	0	0	0	0
+Unassigned_Chimera	0	0	0	0	0	0	0	0	0
+Unassigned_FragmentLength	0	0	0	0	0	0	0	0	0
+Unassigned_Duplicate	0	0	0	0	0	0	0	0	0
+Unassigned_MultiMapping	21012879	17246189	21465297	10900971	9679282	11648742	10366294	11825900	10468198
+Unassigned_Secondary	0	0	0	0	0	0	0	0	0
+Unassigned_Nonjunction	0	0	0	0	0	0	0	0	0
+Unassigned_NoFeatures	7556035	6222055	5121052	7070262	6316203	7700750	8407554	7594437	8351650
+Unassigned_Overlapping_Length	0	0	0	0	0	0	0	0	0
+Unassigned_Ambiguity	0	0	0	0	0	0	0	0	0
