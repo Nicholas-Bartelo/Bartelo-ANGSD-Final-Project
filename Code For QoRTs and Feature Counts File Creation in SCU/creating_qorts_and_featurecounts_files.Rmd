@@ -1,0 +1,84 @@
+---
+title: "QoRTs and Feature Counts"
+author: "Nick Bartelo"
+date: "3/17/2021"
+output: html_document
+---
+
+## QoRTs
+
+To use this tool, we download the .jar file from github to a newly created folder using the command `diabetes_sample1_mkdir alignment_qc` to make the folder and `wget http://hartleys.github.io/QoRTs/QoRTs.jar`. We then executed the command `spack load qorts` so that it is downloaded on the SCU. To use qorts for the first diabetes sample, we use the following code.
+
+```{bash, eval=FALSE}
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/diabetes_sample1_aligned_star_reads/diabetes_sample1_alignments.Aligned.sortedByCoord.out.bam gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/diabetes_sample1_qoRTs_alignment_qc
+```
+
+QoRTs looks through all reads and therefore it is interesting to know how many reads each fastq file has. To do this for the first diabetes sample, we execute the command `zcat diabetes_sample1.fastq.gz | wc -l` which we can simply divide by 4 to get the number of reads in the fastq file. We created a table below to show the results for all samples. There are many reads per sample and so running QoRTs for one file takes about 30 minutes. 
+
+Sample | Number of Reads
+--- | ---
+Diabetes 1 | 25,537,622
+Diabetes 2 | 23,087,560
+Diabetes 3 | 22,486,982
+Heterozygous 1 | 23,652,124
+Heterozygous 2 | 21,958,674
+Heterozygous 3 | 24,500,570
+Wild Type 1 | 24,597,444
+Wild Type 2 | 23,748,629
+Wild Type 3 | 23,233,794
+
+We ran the following script with slurm to generate the results for each aligned bam file. Notice that we had created a folder, for example using the command `mkdir diabetes_sample2_qoRTs_alignment_qc`, before we ran this script in the final_project directory where we keep all our files, for every sample.
+
+```{bash, eval=FALSE}
+#! /bin/bash -i
+
+#SBATCH --account=angsd_class
+#SBATCH --partition=angsd_class
+#SBATCH --nodes=1
+#SBATCH --ntasks=16
+#SBATCH --job-name=qorts_qc
+#SBATCH --time=12:34:00
+#SBATCH --mem=35G
+
+echo "Starting at:" `date` >> hello_slurm_output.txt
+sleep 30
+echo "This is job #:" $SLURM_JOB_ID >> hello_slurm_output.txt
+echo "Running on node:" `hostname` >> hello_slurm_output.txt
+echo "Running on cluster:" $SLURM_CLUSTER_NAME >> hello_slurm_output.txt
+echo "This job was assigned the temporary (local) directory:" $TMPDIR >> hello_slurm_output.txt
+
+wget http://hartleys.github.io/QoRTs/QoRTs.jar
+spack load qorts
+
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/diabetes_sample1_aligned_star_reads/diabetes_sample1_alignments.Aligned.sortedByCoord.out.bam /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/diabetes_sample1_qoRTs_alignment_qc
+
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/diabetes_sample2_aligned_star_reads/diabetes_sample2_alignments.Aligned.sortedByCoord.out.bam /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/diabetes_sample2_qoRTs_alignment_qc
+
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/diabetes_sample3_aligned_star_reads/diabetes_sample3_alignments.Aligned.sortedByCoord.out.bam /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/diabetes_sample3_qoRTs_alignment_qc
+
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/heterozygous_sample1_aligned_star_reads/heterozygous_sample1_alignments.Aligned.sortedByCoord.out.bam /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/heterozygous_sample1_qoRTs_alignment_qc
+
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/heterozygous_sample2_aligned_star_reads/heterozygous_sample2_alignments.Aligned.sortedByCoord.out.bam /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/heterozygous_sample2_qoRTs_alignment_qc
+
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/heterozygous_sample3_aligned_star_reads/heterozygous_sample3_alignments.Aligned.sortedByCoord.out.bam /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/heterozygous_sample3_qoRTs_alignment_qc
+
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/wt_sample1_aligned_star_reads/wt_sample1_alignments.Aligned.sortedByCoord.out.bam /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/wt_sample1_qoRTs_alignment_qc
+
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/wt_sample2_aligned_star_reads/wt_sample2_alignments.Aligned.sortedByCoord.out.bam /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/wt_sample2_qoRTs_alignment_qc
+
+java -Xmx4G -jar QoRTs.jar QC --singleEnded --generatePdfReport /home/nib4003/ANGSD_2021_hw/final_project/wt_sample3_aligned_star_reads/wt_sample3_alignments.Aligned.sortedByCoord.out.bam /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf /home/nib4003/ANGSD_2021_hw/final_project/wt_sample3_qoRTs_alignment_qc
+```
+
+From this output, we receive files with the same name, which is why we put them in different folders. Therefore, we execute the command to change each file WITHIN EACH SEPARATE DIRECTORY, this example for diabetes sample 1: `for file in *; do mv $file diabetes_sample1_$file; done` which renames all files in the folder such that they are labeled with diabetes_sample1 to separate them from the other samples used. When this is complete, we move the .pdf report files to the computer using WinSCP to look at them and upload them to the github repository for the final project.
+
+## featureCounts File Generation
+
+Before running featureCounts, we create a new directory which contains all aligned bam files for use in the final_project directory using the command `mkdir all_bam_files_for_featurecounts`. We then navigated to this directory and copied all bam files to the folder one at a time using, for example, the code `cp /home/nib4003/ANGSD_2021_hw/final_project/diabetes_sample2_aligned_star_reads/diabetes_sample2_alignments.Aligned.sortedByCoord.out.bam .` which gives us our diabetes sample 2. Once this is complete for all bam files, we can move on to running featureCounts.
+
+We can run featureCounts on all our files at once and generate a report that encompasses all of them. To begin, we run the command `spack load subread` in the SCU. This is because featureCounts is part of the subread software package. We then make a new directory in the ANGSD_2021_hw folder using the command `mkdir counting_reads_for_all_samples` and cd into this directory. We then execute the command featureCounts --help to see all the parameters we can use for featureCounts. Since we are counting the number of reads that overlap with every exon, we need to use the parameter `-f` under the level of summarization field which performs read counting at feature level. This results in counting reads for exons rather than genes, which is what we want specified. We add the `-O` flag which assigns reads to all their overlapping features if `-f` is specified, which it is. We also leave the parameter `-t` at the default which specifies the feature type in GTF annotation as ‘exon’. This parameter counts the number of reads that overlap with every exon. We set the parameter `-g` to the default value of gene_id because this corresponds to the syntax in our reference genome file. Below is the code run to receive the output summary files.
+
+```{bash,eval=FALSE}
+featureCounts -a /home/nib4003/ANGSD_2021_hw/final_project/gencode.vM25.primary_assembly.annotation.gtf -f -O -t 'exon' -g 'gene_id' -o final_project_featCounts_mouse_genes.txt /home/nib4003/ANGSD_2021_hw/final_project/all_bam_files_for_featurecounts/*.bam
+```
+
+This generates the summary reports which we transfer to the computer using WinSCP.
