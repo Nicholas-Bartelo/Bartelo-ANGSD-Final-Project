@@ -49,6 +49,8 @@ THINGS TO DO NEXT:
 
 7. Explains why we used some of the STAR parameters we did - e.g. sjdbOverhang = # of bp - 1
 
+8. Explains library protocol used
+
 ### Resources
 
 1. King, Aileen J F. “The Use of Animal Models in Diabetes Research.” British Journal of Pharmacology, Blackwell Publishing Ltd, June 2012, www.ncbi.nlm.nih.gov/pmc/articles/PMC3417415/#:~:text=Although%20rats%20and%20mice%20are,to%20develop%20obesity%20in%20captivity. 
@@ -64,4 +66,6 @@ THINGS TO DO NEXT:
 6. “GEO Accession Viewer.” National Center for Biotechnology Information, U.S. National Library of Medicine, www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107489. 
 
 7. Dobin, Alexander, and Thomas Gingeras. “Optimizing RNA-Seq Mapping with STAR.” Methods in Molecular Biology (Clifton, N.J.), U.S. National Library of Medicine, 2016, pubmed.ncbi.nlm.nih.gov/27115637/. 
+
+8. https://jp.support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/ribosomal-depletion/ribo-zero/ribo-zero-reference-guide-15066012-02.pdf
 
