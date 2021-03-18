@@ -15,6 +15,8 @@ explanation can be found in "Download and begin processing Alignment" files.
 
 THINGS TO DO NEXT:
 
+1. Transfer .html files for fastqc and bamqc to this repository.
+
 1. Use QoRTs tool outlined in "Alignment QC" on all files and see if we need to run SortMeRNA by looking at output or if there are other problems with the aligned reads.
 
 2. Use featureCounts on all samples, outlined in "Counting reads", and read the results into R following the class notes shown here and create all figures to compare samples: https://medcornell.instructure.com/courses/1787065/files/118484018?wrap=1 or also C:\Users\nicky\OneDrive\Documents\ANGSD-R-In_Class\2-24
