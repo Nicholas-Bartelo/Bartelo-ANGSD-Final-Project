@@ -19,7 +19,7 @@ THINGS TO DO NEXT:
 
 1. Look at IGV Browser to find out if the reads are stranded.
 
-3. Run RESeQC since compatible with multiqc.
+3. Run RSeQC since compatible with multiqc. Some useful things RSeQC has that QoRTs doesn't - Gives read quality mapping, read duplication
 
 2. Use featureCounts on all samples, outlined in "Counting reads", and read the results into R following the class notes shown here and create all figures to compare samples: https://medcornell.instructure.com/courses/1787065/files/118484018?wrap=1 or also C:\Users\nicky\OneDrive\Documents\ANGSD-R-In_Class\2-24
 
@@ -27,7 +27,7 @@ THINGS TO DO NEXT:
 
 ## Future Questions To Consider:
 
-1. Can we find gender of mice and see if there are differences in expression levels between different genders? This could result in a new insight into the paper if one gender has more expression than another.
+1. Can we find gender of mice and see if there are differences in expression levels between different genders? This could result in a new insight into the paper if one gender has more expression than another. - ALL MICE ARE FEMALES (FOUND BY LOOKING AT QoRTs OUTPUT Chromosome Distribution (Excluding Autosomes) FIGURES FOR ALL FILES)
 
 2. Library protocol used was ribo zero gold. We have found that there are more overrepresented sequences in diabetes mice than the others. This could be due to this protocol not being run perfectly and therefore resulting in a higher chance of rRNA left over or can also result in high numbers of long non-coding RNA or other non-coding RNA. We need to use BLAST to look at the top sequences, mostly in diabetes sample 3 which failed the overrepresented sequences multiqc output, to see where these sequences are coming from. If they are rRNA, we can potentially use sortMeRNA to get rid of them. The bias could also be due to an increased number of PCR cycles which amplifies GC content and duplicates more sequences, seen in our diabetes sample 3 multiqc.
 
