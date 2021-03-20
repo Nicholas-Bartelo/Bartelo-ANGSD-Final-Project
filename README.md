@@ -11,15 +11,15 @@ explanation can be found in "Download and begin processing Alignment" files.
 
 4. Aligned reads to reference genome using STAR.
 
-5. Ran bamQC for all files but still need to look at resulting files and see if there are additional problems found.
+5. Ran bamQC for all files and found that there are not errors which we should be concerned with.
 
-6. Ran QoRTs on all files.
+6. Ran QoRTs on all aligned files and generated multiplot QC pdf files. 
+
+7. Looked at IGV Browser and determined reads were stranded since they all point in same direction on same gene.
 
 THINGS TO DO NEXT:
 
-1. Look at IGV Browser to find out if the reads are stranded.
-
-3. Run RSeQC since compatible with multiqc. Some useful things RSeQC has that QoRTs doesn't - Gives read quality mapping, read duplication
+1. Run RSeQC since compatible with multiqc. Some useful things RSeQC has that QoRTs doesn't - Gives read quality mapping, read duplication
 
 2. Use featureCounts on all samples, outlined in "Counting reads", and read the results into R following the class notes shown here and create all figures to compare samples: https://medcornell.instructure.com/courses/1787065/files/118484018?wrap=1 or also C:\Users\nicky\OneDrive\Documents\ANGSD-R-In_Class\2-24
 
