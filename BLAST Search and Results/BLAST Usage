@@ -1,7 +1,9 @@
 Reason For Using BLAST:
 We found from multiqc that the diabetes sample 3 failed the overrepresented sequences examination. Therefore, we know this can potentially be a problem for our analysis 
 downstream. Therefore, we look at the fastqc file for diabetes sample 3 and find the overrepresented sequences section, of which the top sequences are shown below. Using BLAST,
-we are able to find out where these overrepresented sequences are mapped to. We show the pdf outputs in this folder for the top overrepresented sequence below. 
+we are able to find out where these overrepresented sequences are mapped to. We show the pdf outputs in this folder for the top overrepresented sequence below. The result
+in the pdf shows that the sequence belongs to a noncoding small cytoplasmic RNA in the gene Rn7s2. Therefore, if the Rn7s2 gene does turn out to be differentially expressed, 
+we need to somehow show that it is not an artifact of PCR amplification.
 NOTE: This overrepresented sequence is the top overrepresented sequence for all diabetes samples and within the top 3 for all samples in total. However, the percentage for 
 all other files are not as significant as those from diabetes sample 3.
 
