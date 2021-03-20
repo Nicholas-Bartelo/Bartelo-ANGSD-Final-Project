@@ -51,6 +51,8 @@ THINGS TO DO NEXT:
 
 8. Explains library protocol used
 
+9. Explains why it is necessary to use stranded flags to get more accurate results for featureCounts when having stranded reads. 
+
 ### Resources
 
 1. King, Aileen J F. “The Use of Animal Models in Diabetes Research.” British Journal of Pharmacology, Blackwell Publishing Ltd, June 2012, www.ncbi.nlm.nih.gov/pmc/articles/PMC3417415/#:~:text=Although%20rats%20and%20mice%20are,to%20develop%20obesity%20in%20captivity. 
@@ -68,4 +70,6 @@ THINGS TO DO NEXT:
 7. Dobin, Alexander, and Thomas Gingeras. “Optimizing RNA-Seq Mapping with STAR.” Methods in Molecular Biology (Clifton, N.J.), U.S. National Library of Medicine, 2016, pubmed.ncbi.nlm.nih.gov/27115637/. 
 
 8. https://jp.support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/ribosomal-depletion/ribo-zero/ribo-zero-reference-guide-15066012-02.pdf
+
+9. A. Mortazavi, BA. Williams, et al. “Comparison of Stranded and Non-Stranded RNA-Seq Transcriptome Profiling and Investigation of Gene Overlap.” BMC Genomics, BioMed Central, 1 Jan. 1970, bmcgenomics.biomedcentral.com/articles/10.1186/s12864-015-1876-7. 
 
