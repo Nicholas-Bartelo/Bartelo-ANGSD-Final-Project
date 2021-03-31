@@ -50,6 +50,8 @@ THINGS TO DO NEXT:
 
 9. Explains why it is necessary to use stranded flags to get more accurate results for featureCounts when having stranded reads. 
 
+10. Talks about diabetes in humans and beta cells so we can connect to the paper on mice.
+
 ### Resources
 
 1. King, Aileen J F. “The Use of Animal Models in Diabetes Research.” British Journal of Pharmacology, Blackwell Publishing Ltd, June 2012, www.ncbi.nlm.nih.gov/pmc/articles/PMC3417415/#:~:text=Although%20rats%20and%20mice%20are,to%20develop%20obesity%20in%20captivity. 
@@ -69,3 +71,5 @@ THINGS TO DO NEXT:
 8. https://jp.support.illumina.com/content/dam/illumina-support/documents/documentation/chemistry_documentation/ribosomal-depletion/ribo-zero/ribo-zero-reference-guide-15066012-02.pdf
 
 9. A. Mortazavi, BA. Williams, et al. “Comparison of Stranded and Non-Stranded RNA-Seq Transcriptome Profiling and Investigation of Gene Overlap.” BMC Genomics, BioMed Central, 1 Jan. 1970, bmcgenomics.biomedcentral.com/articles/10.1186/s12864-015-1876-7. 
+
+10. Unnikrishnan, Ranjit, et al. “Type 2 Diabetes: Demystifying the Global Epidemic.” Diabetes, American Diabetes Association, 1 June 2017, diabetes.diabetesjournals.org/content/66/6/1432. 
