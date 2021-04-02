@@ -30,6 +30,12 @@ THINGS TO DO NEXT:
 
 3. Overall Good Question: Are differentially expressed genes just due to high overrepresented sequences we find? 
 
+## Problems to Add Into Discussion
+
+1. PCR amplification seems different between samples and could be the reason for overrepresented samples.
+2. When trying to rename genes, it is not possible at the start because some genes map to the same common name and some do not map to any name
+3. Do we drop poor mapping quality sequences and when do we do so?
+
 ## What each resource below tells us:
 
 1. Overall use of animals in diabetic research and why db/db is the best.
