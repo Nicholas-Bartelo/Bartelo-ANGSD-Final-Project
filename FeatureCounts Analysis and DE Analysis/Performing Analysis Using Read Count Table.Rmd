@@ -940,7 +940,7 @@ Heatmap(z.mat, name = "z-score",
 Next we show the effect of the shrinkage on the MA plot:
 
 ```{r fig.height=10, fig.width=12}
-plotMA(DGE.results.shrink_db_wt,alpha = 0.05, main = "DB vs WT: with logFC shrinkage", ylim =c(-4,4))
+plotMA(DGE.results.shrink_db_wt,alpha = 0.05, main = "DB vs WT: with logFC shrinkage", ylim =c(-3,3))
 abline(h = 1, col = 'red')
 abline(h = -1, col = 'red')
 
