@@ -1006,7 +1006,7 @@ dim(DGE.results_db_wt_go)
 table(DGE.results_db_wt_go$padj < 0.05, useNA = "ifany")
 ```
 
-Adjusts for types of noise we might see and tend to be more reliable and more robust. We also find the upregulated and downregulated genes based on the log2 Fold Change for the genes that we have already determined to be significant by their p-value. We find a total of 1619 upregulated genes and 473 downregulated genes.
+Below we shrink the logFC which adjusts for types of noise we might see and tend to be more reliable and more robust. 
 
 ```{r}
 # BiocManager::install('apeglm')
