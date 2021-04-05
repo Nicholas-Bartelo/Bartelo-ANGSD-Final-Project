@@ -7,7 +7,7 @@ output: html_document
 
 ## Importing Read Count Table
 
-We first copy the final_project_featCounts_mouse_genes_stranded_after_comments_from_merv.txt (found in SCU at /home/nib4003/ANGSD_2021_hw/final_project/final_project_featCounts_mouse_genes_stranded_after_comments_from_merv.txt) file from the SCU to the R project folder we are using for final project files. This allows us to read in the files easily and keep the data together. 
+We first copy the final_project_featCounts_mouse_genes_stranded_after_comments_from_merv.txt (found in SCU at /home/nib4003/ANGSD_2021_hw/final_project/final_project_featCounts_mouse_genes_stranded_after_comments_from_merv.txt) file from the SCU to the R project folder we are using for final project files. We then renamed this file to final_project_featCounts. This allows us to read in the files easily and keep the data together. 
 
 Below we import the libraries we will need for our analyses, and also show the readcounts table.
 
@@ -20,7 +20,7 @@ library(hexbin)
 library(org.Sc.sgd.db)
 library(EnhancedVolcano)
 library(patchwork)
-readcounts <- paste0("final_project_featCounts_mouse_genes_stranded_after_comments_from_merv.txt") %>% read.table(., header=TRUE)
+readcounts <- paste0("final_project_featCounts.txt") %>% read.table(., header=TRUE)
 ```
 
 The sample names are a bit annoying since they contain the entire SAM file name. Therefore, we label theses with more useful identifiers corresponding to diabetic, heterozygous, and wild-type samples.
