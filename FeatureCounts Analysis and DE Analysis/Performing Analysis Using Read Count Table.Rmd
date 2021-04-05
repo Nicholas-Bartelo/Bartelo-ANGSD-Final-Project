@@ -1,13 +1,13 @@
 ---
 title: "Performing Analysis Using Read Count Table"
 author: "Nick Bartelo"
-date: "3/18/2021"
+date: "4/3/2021"
 output: html_document
 ---
 
 ## Importing Read Count Table
 
-We first copy the final_project_featCounts_mouse_genes.txt and final_project_featCounts_mouse_genes.txt.summary (found in SCU at /home/nib4003/ANGSD_2021_hw/final_project/counting_reads_for_all_samples) files from the SCU to the R project folder we are using for final project files. This allows us to read in the files easily and keep the data together. 
+We first copy the final_project_featCounts_mouse_genes_stranded_after_comments_from_merv.txt (found in SCU at /home/nib4003/ANGSD_2021_hw/final_project/final_project_featCounts_mouse_genes_stranded_after_comments_from_merv.txt) file from the SCU to the R project folder we are using for final project files. This allows us to read in the files easily and keep the data together. 
 
 Below we import the libraries we will need for our analyses, and also show the readcounts table.
 
@@ -20,24 +20,22 @@ library(hexbin)
 library(org.Sc.sgd.db)
 library(EnhancedVolcano)
 library(patchwork)
-readcounts <- paste0("final_project_featCounts_mouse_genes_stranded.txt") %>% read.table(., header=TRUE)
-str(readcounts)
+readcounts <- paste0("final_project_featCounts_mouse_genes_stranded_after_comments_from_merv.txt") %>% read.table(., header=TRUE)
 ```
 
-The sample names are a bit annoying since they contain the entire SAM file name. Let's turn these into more useful identifiers.
+The sample names are a bit annoying since they contain the entire SAM file name. Therefore, we label theses with more useful identifiers corresponding to diabetic, heterozygous, and wild-type samples.
 
 ```{r}
 # Keep a back-up copy of the original names
 orig_names <- names(readcounts) 
 # Change names 
 names(readcounts) <-c(names(readcounts)[1:6],paste("DIABETES",c(1:3), sep = "_"),paste("HETEROZYGOUS",c(1:3), sep = "_"),paste("WT",c(1:3),sep="_") )
-#names(readcounts) <- gsub(".*(DIABETES|HETEROZYGOUS|WT)(_[0-9]+).*", "\\1\\2", orig_names)
 str(readcounts)
 ```
 
 ## CountData 
 
-In principle, readcounts is pretty much already in the format that we will need (columns = Samples, rows = genes), but we are missing row.names and the first couple of columns contain meta data information that need to be separated from the counts (e.g. gene Ids, gene lengths, etc.)
+In principle, readcounts is pretty much already in the format that we will need (columns = Samples, rows = genes), but we are missing row.names and the first couple of columns contain meta data information that need to be separated from the counts (e.g. gene Ids, gene lengths, etc.). We perform these operations below.
 
 ```{r}
 row.names(readcounts) <- make.names(readcounts$Geneid)
@@ -47,6 +45,8 @@ readcounts <- readcounts[ ,-c(1:6)]
 
 head(readcounts)
 ```
+
+Below we create a dataframe for the gene information for each sample.
 
 ```{r}
  #let's use the info from our readcounts objects
@@ -58,14 +58,15 @@ sample_info # rows contain gene information for each sample
 
 ## Generate the DESeqDataSet
 
+Below we generate the DESeqDataSet from our counts for all the samples.
+
 ```{r}
 DESeq.ds <- DESeqDataSetFromMatrix(countData = as.matrix(readcounts), colData = sample_info, design = ~ condition)
 DESeq.ds
 head(counts(DESeq.ds))
 ```
 
-How many reads were sequenced for each sample ( = library sizes)?
-f(x) = condition*x<=>readcouns ~ condition
+Below we show the number of reads sequenced for each sample.
 
 ```{r}
 colSums(counts(DESeq.ds)) %>% barplot
@@ -80,7 +81,6 @@ keep_genes <- rowSums(counts(DESeq.ds)) > 0
 DESeq.ds <- DESeq.ds[ keep_genes, ]
 dim(DESeq.ds)
 ```
-
 
 ## Assumptions of DESeq’s size factor method:
 
@@ -97,7 +97,7 @@ plot(sizeFactors(DESeq.ds),colSums(counts(DESeq.ds)), ylab = "library sizes", xl
 ```
 
 
-## Reducing the dependence of the variance on the mean
+## Reducing the dependence of the variance on the mean 
 
 DESeq offers two ways to shrink the log-transformed counts for genes with very low counts: rlog and varianceStabilizingTransformation(vst). 
 
@@ -110,7 +110,7 @@ DESeq.rlog <-rlog(DESeq.ds, blind = TRUE)
 ## strong differences in a large proportion of the genes
 ```
 
-Let’s visually check the results of the rlog transformation:
+Below we visually check the results of the rlog transformation for diabetes sample 1 and diabetes sample 2.
 
 ```{r}
 par(mfrow=c(1,2))
@@ -120,109 +120,1250 @@ par(mfrow=c(1,2))
 plot(assay(DESeq.rlog)[,1],assay(DESeq.rlog)[,2],cex=.1, main = "rlog transformed",xlab =colnames(assay(DESeq.rlog[,1])),ylab =colnames(assay(DESeq.rlog[,2])) )
 ```
 
+Below we plot the first two principal components, which shows us that our samples are shown to have features which group them very well.
+
 ```{r}
-rlog.norm.counts <-assay(DESeq.rlog)
+# We set ntop = 500 (the default) to show this represents the top 500 most variable genes used by the PCA
+#jpeg(file="PCA_plot.jpeg")
+plotPCA(DESeq.rlog, ntop = 500) 
+#dev.off()
 ```
+
+## Using Just Wild Type vs. Heterozygous 
+
+Below we take the columns corresponding to the heterozygous and wild-type mice only for a direct comparison between these two sample types.
+
+```{r}
+## Take only the last 6 columns (heterozygous and wild type)
+readcounts_het_wt <- readcounts[ , c(4:9)]
+
+head(readcounts_het_wt)
+```
+
+Below we create a dataframe for the gene information for each sample.
+
+```{r}
+ #let's use the info from our readcounts objects
+sample_info_het_wt <- DataFrame(condition_het_wt =gsub("_[0-9]+", "",names(readcounts_het_wt)),row.names =names(readcounts_het_wt) )
+
+sample_info_het_wt # rows contain gene information for each sample
+```
+
+### Generate the DESeqDataSet for heterozygous and wild type only
+
+Below we generate the DESeqDataSet from our counts for the wild-type and heterozygous mice.
+
+```{r}
+DESeq.ds_het_wt <- DESeqDataSetFromMatrix(countData = as.matrix(readcounts_het_wt), colData = sample_info_het_wt, design = ~ condition_het_wt)
+DESeq.ds_het_wt
+head(counts(DESeq.ds_het_wt))
+```
+
+Below we show the number of reads sequenced for each sample.
+
+```{r}
+colSums(counts(DESeq.ds_het_wt)) %>% barplot
+```
+
+Remove genes with no reads:
+
+```{r}
+dim(DESeq.ds_het_wt)
+
+keep_genes_het_wt <- rowSums(counts(DESeq.ds_het_wt)) > 0
+DESeq.ds_het_wt <- DESeq.ds_het_wt[ keep_genes_het_wt, ]
+dim(DESeq.ds_het_wt)
+```
+
+Below we change the names of the genes from the ensembl IDs to the external gene names. We do this using the getBM package from BiocManager and using the biomaRt library. We first make a character vector of the rownames, corresponding to the Ensemble geneIds. We then use the BioMart database to map the Ensemble geneIds to the common names of the genes for mice (mmusculus). Finally, we replace the rownames of the current readcounts with the updated names. The reference is https://www.biostars.org/p/147351/. The output for mapped_names is a vector of length less than that of the total number of genes in the readcounts matrix. This is due to some Ensembl names not mapping to an external gene name. To incorporate all the genes, we must merge the two dataframes such that the corresponding external gene name is NA for an Ensembl name initially without an external gene name. This allows us to compare our results with the paper.
+
+```{r}
+#BiocManager::install("getBM")
+library(biomaRt)
+
+ens_het_wt <- c(rownames(DESeq.ds_het_wt))
+ens_het_wt <- gsub('\\..*', '', ens_het_wt)
+mouse = useMart(biomart="ensembl", dataset="mmusculus_gene_ensembl")
+mapped_names <- getBM(attributes=c('ensembl_gene_id',
+                      'external_gene_name'),
+         values = ens_het_wt,
+         mart = mouse)
+ens_df_het_wt <- as.data.frame(ens_het_wt)
+colnames(ens_df_het_wt) <- "ensembl_gene_id"
+idmap_het_wt = merge(x = ens_df_het_wt, y = mapped_names, by="ensembl_gene_id", all.x=TRUE)
+idmap_het_wt$external_gene_name <- ifelse(is.na(idmap_het_wt$external_gene_name), idmap_het_wt$ensembl_gene_id, idmap_het_wt$external_gene_name)
+row.names(DESeq.ds_het_wt) <- make.names(idmap_het_wt[,2])
+```
+
+### Calculating and applying the size factor for heterozygous and wild type only
+
+Below we show the size factors of the samples.
+
+```{r}
+DESeq.ds_het_wt <- estimateSizeFactors(DESeq.ds_het_wt)
+# calculate SFs, add them to object
+plot(sizeFactors(DESeq.ds_het_wt),colSums(counts(DESeq.ds_het_wt)), ylab = "library sizes", xlab = "size factors", cex = .6 )
+```
+
+### Reducing the dependence of the variance on the mean
+
+First, we use the rlog function which transforms the read counts to the log2 scale while simultaneously minimizing the difference between samples for rows with small counts and taking differences between library sizes of the samples into account. More specifically, the expression values are modeled in such a manner that their dispersion is not based on the actual variability an individual gene may show across its replicates, instead, its variability is based on the general dispersion-mean trend over the entire dataset.
+
+```{r}
+# this actually generates a different type of object!
+DESeq.rlog_het_wt <-rlog(DESeq.ds_het_wt, blind = TRUE)
+## set blind = FALSE if the conditions are expected to introduce
+## strong differences in a large proportion of the genes
+```
+
+Let’s visually check the results of the rlog transformation for heterozygous sample 1 and wild-type sample 1:
+
+```{r}
+par(mfrow=c(1,2))
+
+
+## the rlog-transformed counts are stored in the accessor "assay"
+plot(assay(DESeq.rlog_het_wt)[,1],assay(DESeq.rlog_het_wt)[,2],cex=.1, main = "rlog transformed",xlab =colnames(assay(DESeq.rlog_het_wt[,1])),ylab =colnames(assay(DESeq.rlog_het_wt[,4])) )
+```
+
+Below we create an assay for the rlog-transform of the readcounts.
+
+```{r}
+rlog.norm.counts_het_wt <-assay(DESeq.rlog_het_wt)
+```
+
+Below we show the effect of the rlog-transformed read counts.
 
 ```{r}
 ## rlog-transformed read counts
-msd_plot <- vsn::meanSdPlot( rlog.norm.counts, ranks=FALSE, plot = FALSE)
-msd_plot$gg+ ggtitle("rlog transformation") + coord_cartesian(ylim =c(0,3))
+msd_plot_het_wt <- vsn::meanSdPlot( rlog.norm.counts_het_wt, ranks=FALSE, plot = FALSE)
+msd_plot_het_wt$gg+ ggtitle("rlog transformation") + coord_cartesian(ylim =c(0,3))
 ```
-It’s not perfect, but it looks much better than before.
-Now, we have expression values that have been adjusted for:
-* differences in sequencing depth;
-* differences in RNA composition;
-* heteroskedasticity;
-* large dynamic range.
 
-These values can now be used for exploratory analyses– for DE analyses, we will eventually supply the raw counts, though (because the DE tests will require their own modeling of the gene counts).
-
+Below we relevel the data so that the reference is the wild-type samples.
 
 ```{r}
-DESeq.ds
-DESeq.ds$condition
-DESeq.ds$condition <- relevel(DESeq.ds$condition, ref = 'WT')
+DESeq.ds_het_wt
+DESeq.ds_het_wt$condition_het_wt
+DESeq.ds_het_wt$condition_het_wt <- relevel(DESeq.ds_het_wt$condition_het_wt, ref = 'WT')
 ```
 
 Now, let's perform DE analysis!
 
 ```{r}
-DESeq.ds <- DESeq(DESeq.ds)
+DESeq.ds_het_wt <- DESeq(DESeq.ds_het_wt)
 ```
 
-Below we show that now we have row data, whereas DESeq.ds did not have this before.
+Below we look at the DE in a new way. We can obtain unfiltered GLM results, i.e. without outlier removal or independent filtering with the following call which results in no p-values having an NA as a result:
 
 ```{r}
-DESeq.ds
+DGE.results_het_wt <- results(DESeq.ds_het_wt)
+dim(DGE.results_het_wt)
+# Find how many significant genes. There are a large number of genes that have NA because the program knows that they have no chance at being significant and therefore does not even produce an output 
+table(DGE.results_het_wt$padj < 0.05, useNA = "ifany")
 ```
 
-To look at the DE in a new way:
+The top 3 most significant genes and their corresponding adjusted p-values are shown below.
 
 ```{r}
-DGE.results <- results(DESeq.ds)
-dim(DGE.results)
-# Find how many significant genes. There are ~43% of genes that show significant DE 
-table(DGE.results$padj < 0.05)
+row.names(DGE.results_het_wt)[which(DGE.results_het_wt$padj<1e-40)]
+DGE.results_het_wt$padj[which(DGE.results_het_wt$padj<1e-40)]
 ```
 
-Use heatmap (DON'T USE THIS HEATMAP (PHEATMAP) USE COMPLEX HEATMAP IN R) for getting an impression of the robustness of the expression changes to gauge the noise levels and see how many are upregulated and downregulated. The y-axis is all the significant genes.:
+Below we create a heatmap using complexheatmap for all significant genes.
 
 ```{r}
-DGEgenes <- subset(DGE.results, padj < 0.05) %>% rownames
+#BiocManager::install("ComplexHeatmap")
+library(ComplexHeatmap)
+library(circlize)
 
-# Get all rlog values for significant genes ([DGEgenes, ] gives all rows of significant genes and all their columns)
-rlog.dge <- DESeq.rlog[DGEgenes, ] %>% assay
-
-library(pheatmap)
-pheatmap(rlog.dge, scale='none')
+DGEgenes_het_wt <- subset(DGE.results_het_wt, padj < 0.05) %>% rownames
+row.names(DESeq.rlog_het_wt) <- rownames(DGE.results_het_wt)
+rlog.dge_het_wt <- DESeq.rlog_het_wt[DGEgenes_het_wt, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_wt), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        show_row_name = FALSE,
+        cluster_columns = FALSE,
+        split=cutGroups,
+        column_title = "Heatmap For HET vs. WT Significant Genes")
 ```
-
-Make the heatmap more readable. We see that the noise levels for WT are a bit higher than that of the SNF2. 
-
-```{r}
-pheatmap(rlog.dge, scale='row', show_rownames = FALSE, main = 'DGE genes with row-z-score') # With z-score
-```
-
-## LogFC values
-
-Despite the fact that many visualizations will use the normalized read counts per sample, e.g. by simply focusing on that subset of genes that passed the adjusted p-value threshold, it is often useful to interrogate the fold change values that were estimated (i.e., the magnitude) of change as well. Many researchers believe that subtle fold changes are more difficult to interpret than dramatic differences in expression; therefore you may find yourself wanting to rank the genes by the logFC values in addition to their statistical significance as implied by their adjusted p-values.
 
 ### MA-plots and volcano plots
 
-The MA-plot provides a global view of the differential genes, with the log2 fold change on the y-axis over the mean of normalized counts. Genes that pass the significance threshold (adjusted p.value <0.05) are colored in red.
+The MA-plot provides a global view of the differential genes, with the log2 fold change on the y-axis over the mean of normalized counts. Genes that pass the significance threshold (adjusted p.value <0.05) are colored in blue.
 
 ```{r}
-plotMA(DGE.results, alpha = 0.05, main = "Test: p.adj.value < 0.05", ylim =c(-4,4))
+plotMA(DGE.results_het_wt, alpha = 0.05, main = "Test: p.adj.value < 0.05 HET vs. WT")
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
 ```
 
-```{r}
+Below we create a volcano plot showing the significant genes with respect to logFC change and p-value in red for the comparison between heterozygous and wild-type mice.
+
+```{r fig.width=12, fig.height=8}
 library(EnhancedVolcano)
-vp1 <-EnhancedVolcano(DGE.results,lab =rownames(DGE.results),x ='log2FoldChange',y ='padj', pCutoff = 0.05,title = "Diabetes / Heterozygous / WT")
-print(vp1)
+vp1_het_wt <-EnhancedVolcano(DGE.results_het_wt,lab =rownames(DGE.results_het_wt),x ='log2FoldChange',y ='padj', pCutoff = 0.05, title = "HET vs WT", xlim=c(-5,5), ylim = c(0,20))
+print(vp1_het_wt)
 ```
 
 ## Shrinking logFC
 
-Adjusts for types of noise we might see. Tend to be more reliable and more robust. 
+Adjusts for types of noise we might see and tends to be more reliable and more robust. We also find the upregulated and downregulated genes based on the log2 Fold Change for the genes that we have already determined to be significant by their p-value. There are 27 upregulated genes and 8 genes in total significant for both p-value and having a log2 Fold Change showing a significant downregulation. These are shown in the table below.
 
 ```{r}
 # BiocManager::install('apeglm')
-DGE.results.shrink <- lfcShrink(DESeq.ds, coef = 2, type = 'apeglm')
+DGE.results.shrink_het_wt <- lfcShrink(DESeq.ds_het_wt, coef = 2, type = 'apeglm')
+
+upregulated_genes_values_het_wt <- DGE.results.shrink_het_wt$log2FoldChange[DGE.results.shrink_het_wt$log2FoldChange > 1]
+downregulated_genes_values_het_wt <- DGE.results.shrink_het_wt$log2FoldChange[DGE.results.shrink_het_wt$log2FoldChange < -1]
+
+upregulated_genes_het_wt <- row.names(DGE.results.shrink_het_wt)[DGE.results.shrink_het_wt$log2FoldChange > 1]
+upregulated_genes_values_het_wt_sorted <- upregulated_genes_values_het_wt[sort.list(upregulated_genes_values_het_wt)]
+top_twentyfive_upregulated_genes_het_wt <- names(upregulated_genes_values_het_wt_sorted[1:25])
+
+downregulated_genes_het_wt <- row.names(DGE.results.shrink_het_wt)[DGE.results.shrink_het_wt$log2FoldChange < -1]
+downregulated_genes_values_het_wt_sorted <- downregulated_genes_values_het_wt[sort.list(downregulated_genes_values_het_wt)]
+top_nine_downregulated_genes_het_wt <- names(downregulated_genes_values_het_wt_sorted[1:9])
+
+finding_upregulated_genes_in_significant_genes <- upregulated_genes_het_wt %in% DGEgenes_het_wt
+final_upregulated_genes_het_wt <- upregulated_genes_het_wt[finding_upregulated_genes_in_significant_genes]
+
+finding_downregulated_genes_in_significant_genes <- downregulated_genes_het_wt %in% DGEgenes_het_wt
+final_downregulated_genes_het_wt <- downregulated_genes_het_wt[finding_downregulated_genes_in_significant_genes]
+print(final_upregulated_genes_het_wt)
+print(final_downregulated_genes_het_wt)
 ```
 
-Let’s see what the effect of the shrinkage is on the MA plot:
+ | Significant Gene Name | Upregulated or Downregulated
+--- | --- | ---
+1 | Rnf114 | Upregulated
+2 | Slc39a6 | Upregulated
+3 | Slk | Upregulated
+4 | Arl8a | Upregulated
+5 | Ube2t | Upregulated
+6 | Auts2 | Upregulated
+7 | Tmem63b | Upregulated
+8 | Cdh6 | Upregulated
+9 | Cmklr1 | Upregulated
+10 | Pip5kl1 | Upregulated
+11 | Zfp445 | Upregulated
+12 | Trmt1l | Upregulated
+13 | Ercc6 | Upregulated
+14 | Gm9939 | Upregulated
+15 | Gabra5 | Upregulated
+16 | Gm22739 | Upregulated
+17 | Gm10570 | Upregulated
+18 | Tldc2 | Upregulated
+19 | Fam83c | Upregulated
+20 | ENSMUSG00000077309 (n-R5s8) | Upregulated
+21 | ENSMUSG00000077829 (Gm23237) | Upregulated
+22 | Gm5210 | Upregulated
+23 | Gm17771 | Upregulated
+24 | Gm44163 | Upregulated
+25 | Gm44241 | Upregulated
+26 | D9Wsu149 | Upregulated
+27 | Gm49311 | Upregulated
+28 | Brinp2 | Downregulated
+29 | Gm24695 | Downregulated
+30 | Hdac8 | Downregulated
+31 | Gm37736 | Downregulated
+32 | Gm20239 | Downregulated
+33 | Gm42536 | Downregulated
+34 | Gm44041 | Downregulated
+35 | X2610306O10Rik | Downregulated
 
-```{r}
+Below we create a heatmap using complexheatmap for the top 25 upregulated genes. We see that heterozygous sample 3 is has a much greater contrast with the wild-type samples than the other two heterozgyous samples.
+
+```{r fig.height=10}
+DGEgenes_het_wt_top_twentyfive_upregulated <- top_twentyfive_upregulated_genes_het_wt
+rlog.dge_het_wt_top_twentyfive_upregulated <- DESeq.rlog_het_wt[DGEgenes_het_wt_top_twentyfive_upregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_wt_top_twentyfive_upregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "HET vs. WT: Top 25 Upregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Below we do the same for the 9 downregulated genes we concluded to have a logFC value less than -1.
+
+```{r fig.height=10}
+DGEgenes_het_wt_top_nine_downregulated <- top_nine_downregulated_genes_het_wt
+rlog.dge_het_wt_top_nine_downregulated <- DESeq.rlog_het_wt[DGEgenes_het_wt_top_nine_downregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_wt_top_nine_downregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "HET vs. WT: Top 9 Downregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Next we show the effect of the shrinkage on the MA plot:
+
+```{r fig.width=12, fig.height=10}
+plotMA(DGE.results.shrink_het_wt,alpha = 0.05, main = "with logFC shrinkage", ylim=c(-3,3))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+
 par(mfrow =c(1,2))
-plotMA(DGE.results, alpha = 0.05,main = "no shrinkage", ylim =c(-4,4))
-DGE.results.shrnk <-lfcShrink(DESeq.ds, coef = 2, type = "apeglm")
-plotMA(DGE.results.shrnk,alpha = 0.05,main = "with logFC shrinkage", ylim =c(-4,4))
+plotMA(DGE.results_het_wt, alpha = 0.05,main = "no shrinkage")
+DGE.results.shrink_het_wt <-lfcShrink(DESeq.ds_het_wt, coef = 2, type = "apeglm")
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+plotMA(DGE.results.shrink_het_wt,alpha = 0.05, main = "with logFC shrinkage", ylim=c(-3,3))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
 ```
 
+Below we show a volcano plot after the logFC shrink operation. We notice that there are genes with p-values that are astronomically small. Therefore, we have reason to believe that there could have been a problem at some point along the pipeline. We also compare the gene expression differences between the heterozygous and wild-type mice with and without the logFC shrink. We see that with the shrinkage, we find a few more significant genes.
+
+```{r fig.width=12, fig.height=8}
+vp2_het_wt <- EnhancedVolcano(DGE.results.shrink_het_wt,lab =rownames(DGE.results.shrink_het_wt),x ='log2FoldChange',y ='padj', pCutoff = 0.05,title = "HET vs WT: with logFC shrinkage")
+vp2_het_wt_with_cutoff <- EnhancedVolcano(DGE.results.shrink_het_wt,lab =rownames(DGE.results.shrink_het_wt),x ='log2FoldChange',y ='padj', pCutoff = 0.05,title = "HET vs WT: with logFC shrinkage", xlim=c(-5,5), ylim = c(0,20))
+library(patchwork)
+print(vp2_het_wt)
+print(vp2_het_wt_with_cutoff)
+vp1_het_wt+vp2_het_wt_with_cutoff
+```
+
+
+## Using Just Diabetes vs. Heterozygous 
+
+Below we take the columns corresponding to the diabetic and heterozygous mice only for a direct comparison between these two sample types.
 
 ```{r}
-vp2 <-EnhancedVolcano(DGE.results.shrnk,lab =rownames(DGE.results.shrnk),x ='log2FoldChange',y ='padj', pCutoff = 0.05,title = "with logFC shrinkage")
-library(patchwork)
-vp1+vp2
+## Take only the last 6 columns (heterozygous and wild type)
+readcounts_het_db <- readcounts[ , c(1:6)]
+
+head(readcounts_het_db)
 ```
+
+Below we create a dataframe for the gene information for each sample.
+
+```{r}
+ #let's use the info from our readcounts objects
+sample_info_het_db <- DataFrame(condition_het_db =gsub("_[0-9]+", "",names(readcounts_het_db)),row.names =names(readcounts_het_db) )
+
+sample_info_het_db # rows contain gene information for each sample
+```
+
+### Generate the DESeqDataSet for heterozygous and diabetes only
+
+Below we generate the DESeqDataSet from our counts for the heterozygous and diabetic mice.
+
+```{r}
+DESeq.ds_het_db <- DESeqDataSetFromMatrix(countData = as.matrix(readcounts_het_db), colData = sample_info_het_db, design = ~ condition_het_db)
+DESeq.ds_het_db
+head(counts(DESeq.ds_het_db))
+```
+
+Below we show the number of reads sequenced for each sample.
+
+```{r}
+colSums(counts(DESeq.ds_het_db)) %>% barplot
+```
+
+Remove genes with no reads:
+
+```{r}
+dim(DESeq.ds_het_db)
+
+keep_genes_het_db <- rowSums(counts(DESeq.ds_het_db)) > 0
+DESeq.ds_het_db <- DESeq.ds_het_db[ keep_genes_het_db, ]
+dim(DESeq.ds_het_db)
+```
+
+Below we change the names of the genes from the ensembl IDs to the external gene names. We do this using the getBM package from BiocManager and using the biomaRt library. We first make a character vector of the rownames, corresponding to the Ensemble geneIds. We then use the BioMart database to map the Ensemble geneIds to the common names of the genes for mice (mmusculus). Finally, we replace the rownames of the current readcounts with the updated names. The reference is https://www.biostars.org/p/147351/. The output for mapped_names is a vector of length less than that of the total number of genes in the readcounts matrix. This is due to some Ensembl names not mapping to an external gene name. To incorporate all the genes, we must merge the two dataframes such that the corresponding external gene name is NA for an Ensembl name initially without an external gene name. This allows us to compare our results with the paper.
+
+```{r}
+#BiocManager::install("getBM")
+library(biomaRt)
+
+ens_het_db <- c(rownames(DESeq.ds_het_db))
+ens_het_db <- gsub('\\..*', '', ens_het_db)
+mouse = useMart(biomart="ensembl", dataset="mmusculus_gene_ensembl")
+mapped_names <- getBM(attributes=c('ensembl_gene_id',
+                      'external_gene_name'),
+         values = ens_het_db,
+         mart = mouse)
+ens_df_het_db <- as.data.frame(ens_het_db)
+colnames(ens_df_het_db) <- "ensembl_gene_id"
+idmap_het_db = merge(x = ens_df_het_db, y = mapped_names, by="ensembl_gene_id", all.x=TRUE)
+idmap_het_db$external_gene_name <- ifelse(is.na(idmap_het_db$external_gene_name), idmap_het_db$ensembl_gene_id, idmap_het_db$external_gene_name)
+row.names(DESeq.ds_het_db) <- make.names(idmap_het_db[,2])
+```
+
+
+### Calculating and applying the size factor for heterozygous and wild type only
+
+Below we show the size factors of the samples.
+
+```{r}
+DESeq.ds_het_db <- estimateSizeFactors(DESeq.ds_het_db)
+# calculate SFs, add them to object
+plot(sizeFactors(DESeq.ds_het_db),colSums(counts(DESeq.ds_het_db)), ylab = "library sizes", xlab = "size factors", cex = .6 )
+```
+
+### Reducing the dependence of the variance on the mean
+
+First, we use the rlog function which transforms the read counts to the log2 scale while simultaneously minimizing the difference between samples for rows with small counts and taking differences between library sizes of the samples into account. More specifically, the expression values are modeled in such a manner that their dispersion is not based on the actual variability an individual gene may show across its replicates, instead, its variability is based on the general dispersion-mean trend over the entire dataset.
+
+```{r}
+# this actually generates a different type of object!
+DESeq.rlog_het_db <-rlog(DESeq.ds_het_db, blind = TRUE)
+## set blind = FALSE if the conditions are expected to introduce
+## strong differences in a large proportion of the genes
+```
+
+Next we visually check the results of the rlog transformation for diabetes sample 1 and heterozygous sample 1:
+
+```{r}
+par(mfrow=c(1,2))
+
+
+## the rlog-transformed counts are stored in the accessor "assay"
+plot(assay(DESeq.rlog_het_db)[,1],assay(DESeq.rlog_het_db)[,2],cex=.1, main = "rlog transformed",xlab =colnames(assay(DESeq.rlog_het_db[,1])),ylab =colnames(assay(DESeq.rlog_het_db[,4])) )
+```
+
+Below we create an assay for the rlog-transform of the readcounts.
+
+```{r}
+rlog.norm.counts_het_db <-assay(DESeq.rlog_het_db)
+```
+
+Below we show the effect of the rlog-transformed read counts.
+
+```{r}
+## rlog-transformed read counts
+msd_plot_het_db <- vsn::meanSdPlot( rlog.norm.counts_het_db, ranks=FALSE, plot = FALSE)
+msd_plot_het_db$gg+ ggtitle("rlog transformation") + coord_cartesian(ylim =c(0,3))
+```
+
+Below we relevel the data so that the reference is the heterozygous samples.
+
+```{r}
+DESeq.ds_het_db
+DESeq.ds_het_db$condition_het_db
+DESeq.ds_het_db$condition_het_db <- relevel(DESeq.ds_het_db$condition_het_db, ref = 'HETEROZYGOUS')
+```
+
+Now, let's perform DE analysis!
+
+```{r}
+DESeq.ds_het_db <- DESeq(DESeq.ds_het_db)
+```
+
+
+Below we show the number of significant genes, non-significant genes, and genes that had no chance of being significant so they did not even have an adjusted p-value calculated for them (represented in the NA column).
+
+```{r}
+DGE.results_het_db <- results(DESeq.ds_het_db)
+dim(DGE.results_het_db)
+# Find how many significant genes. There are ~% of genes that show significant DE 
+table(DGE.results_het_db$padj < 0.05, useNA = "ifany")
+```
+
+The top 4 most significant genes and their corresponding adjusted p-values are shown below.
+
+```{r}
+row.names(DGE.results_het_db)[which(DGE.results_het_db$padj<1e-210)]
+DGE.results_het_db$padj[which(DGE.results_het_db$padj<1e-210)]
+```
+
+Below we create a heatmap using complexheatmap for the comparison between diabetic and heterozygous mice.
+
+```{r}
+DGEgenes_het_db <- subset(DGE.results_het_db, padj < 0.05) %>% rownames
+row.names(DESeq.rlog_het_db) <- rownames(DGE.results_het_db)
+rlog.dge_het_db <- DESeq.rlog_het_db[DGEgenes_het_db, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_db), center=TRUE, scale=TRUE))
+z.mat <- t(scale(t(rlog.dge_het_wt), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        show_row_name = FALSE,
+        cluster_columns = FALSE,
+        split=cutGroups,
+        column_title = "Heatmap For DB vs. HET Significant Genes")
+```
+
+### MA-plots and volcano plots
+
+The MA-plot provides a global view of the differential genes, with the log2 fold change on the y-axis over the mean of normalized counts. Genes that pass the significance threshold (adjusted p.value <0.05) are colored in blue.
+
+```{r}
+plotMA(DGE.results_het_db, alpha = 0.05, main = "Test: p.adj.value < 0.05 DB vs. HET", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+```
+
+Below we create a volcano plot to show the most significant gene differences in expression between the heterozygous and diabetes mice.
+
+```{r fig.width=12, fig.height=8}
+library(EnhancedVolcano)
+vp1_het_db <-EnhancedVolcano(DGE.results_het_db,lab =rownames(DGE.results_het_db),x ='log2FoldChange',y ='padj', pCutoff = 0.05, title = "DB vs HET")
+print(vp1_het_db)
+```
+
+## Shrinking logFC
+
+Adjusts for types of noise we might see. Tend to be more reliable and more robust. We also find the upregulated and downregulated genes based on the log2 Fold Change for the genes that we have already determined to be significant by their p-value. The total upregulated genes are 1492 and total downregulated genes are 503.
+
+```{r}
+# BiocManager::install('apeglm')
+DGE.results.shrink_het_db <- lfcShrink(DESeq.ds_het_db, coef = 2, type = 'apeglm')
+
+upregulated_genes_values_het_db <- DGE.results.shrink_het_db$log2FoldChange[DGE.results.shrink_het_db$log2FoldChange > 1]
+downregulated_genes_values_het_db <- DGE.results.shrink_het_db$log2FoldChange[DGE.results.shrink_het_db$log2FoldChange < -1]
+
+upregulated_genes_het_db <- row.names(DGE.results.shrink_het_db)[DGE.results.shrink_het_db$log2FoldChange > 1]
+upregulated_genes_values_het_db_sorted <- upregulated_genes_values_het_db[sort.list(upregulated_genes_values_het_db)]
+top_fifty_upregulated_genes_het_db <- names(upregulated_genes_values_het_db_sorted[1:50])
+
+downregulated_genes_het_db <- row.names(DGE.results.shrink_het_db)[DGE.results.shrink_het_db$log2FoldChange < -1]
+downregulated_genes_values_het_db_sorted <- downregulated_genes_values_het_db[sort.list(downregulated_genes_values_het_db)]
+top_fifty_downregulated_genes_het_db <- names(downregulated_genes_values_het_db_sorted[1:50])
+
+finding_upregulated_genes_in_significant_genes_het_db <- upregulated_genes_het_db %in% DGEgenes_het_db
+
+final_upregulated_genes_het_db <- upregulated_genes_het_db[finding_upregulated_genes_in_significant_genes_het_db]
+
+finding_downregulated_genes_in_significant_genes_het_db <- downregulated_genes_het_db %in% DGEgenes_het_db
+final_downregulated_genes_het_db <- downregulated_genes_het_db[finding_downregulated_genes_in_significant_genes_het_db]
+print(length(final_upregulated_genes_het_db))
+print(length(final_downregulated_genes_het_db))
+```
+
+Below we create a heatmap using complexheatmap for the top 50 upregulated genes. We see that diabetes sample 2 is more like the heterozygous samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the heterozygous and diabetes samples, but closer to the other diabetes samples.
+
+```{r fig.height=10}
+DGEgenes_het_db_top_fifty_upregulated <- top_fifty_upregulated_genes_het_db
+rlog.dge_het_db_top_fifty_upregulated <- DESeq.rlog_het_db[DGEgenes_het_db_top_fifty_upregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_db_top_fifty_upregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. HET: Top 50 Upregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Below we do the same for the top fifty downregulated genes.
+
+```{r fig.height=10}
+DGEgenes_het_db_top_fifty_downregulated <- top_fifty_downregulated_genes_het_db
+rlog.dge_het_db_top_fifty_downregulated <- DESeq.rlog_het_db[DGEgenes_het_db_top_fifty_downregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_db_top_fifty_downregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. HET: Top 50 Downregulated Genes",
+        column_title_gp = gpar(fontsize = 30),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Below we show the effect of the shrinkage on the MA plot.
+
+```{r fig.width=12, fig.height=10}
+plotMA(DGE.results.shrink_het_db,alpha = 0.05, main = "with logFC shrinkage", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+
+par(mfrow =c(1,2))
+plotMA(DGE.results_het_db, alpha = 0.05,main = "no shrinkage", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+DGE.results.shrink_het_db <-lfcShrink(DESeq.ds_het_db, coef = 2, type = "apeglm")
+plotMA(DGE.results.shrink_het_db,alpha = 0.05, main = "with logFC shrinkage", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+```
+
+Below we show a volcano plot after the logFC shrink operation. We also compare the gene expression differences between the diabetic and heterozygous mice with and without the logFC shrink. We see that with the shrinkage, we find a few more significant genes.
+
+```{r fig.width=12, fig.height=8}
+vp2_het_db <-EnhancedVolcano(DGE.results.shrink_het_db,lab =rownames(DGE.results.shrink_het_db),x ='log2FoldChange',y ='padj', pCutoff = 0.05,title = "DB vs HET: with logFC shrinkage")
+library(patchwork)
+print(vp2_het_db)
+vp1_het_db+vp2_het_db
+```
+
+
+## Using Just Diabetes vs. Wild Type 
+
+Below we take the columns corresponding to the diabetic and wild-type mice only for a direct comparison between these two sample types.
+
+```{r}
+## Take only the last 6 columns (heterozygous and wild type)
+readcounts_db_wt <- readcounts[ , c(1:3, 7:9)]
+
+head(readcounts_db_wt)
+```
+
+Below we create a dataframe for the gene information for each sample.
+
+```{r}
+ #let's use the info from our readcounts objects
+sample_info_db_wt <- DataFrame(condition_db_wt =gsub("_[0-9]+", "",names(readcounts_db_wt)),row.names =names(readcounts_db_wt) )
+
+sample_info_db_wt # rows contain gene information for each sample
+```
+
+### Generate the DESeqDataSet for wild-type and diabetes only
+
+Below we generate the DESeqDataSet from our counts for the wild-type and diabetic mice.
+
+```{r}
+DESeq.ds_db_wt <- DESeqDataSetFromMatrix(countData = as.matrix(readcounts_db_wt), colData = sample_info_db_wt, design = ~ condition_db_wt)
+DESeq.ds_db_wt
+head(counts(DESeq.ds_db_wt))
+```
+
+Below we show the number of reads sequenced for each sample.
+
+```{r}
+colSums(counts(DESeq.ds_db_wt)) %>% barplot
+```
+
+Remove genes with no reads:
+
+```{r}
+dim(DESeq.ds_db_wt)
+
+keep_genes_db_wt <- rowSums(counts(DESeq.ds_db_wt)) > 0
+DESeq.ds_db_wt <- DESeq.ds_db_wt[ keep_genes_db_wt, ]
+dim(DESeq.ds_db_wt)
+```
+
+Below we change the names of the genes from the ensembl IDs to the external gene names. We do this using the getBM package from BiocManager and using the biomaRt library. We first make a character vector of the rownames, corresponding to the Ensemble geneIds. We then use the BioMart database to map the Ensemble geneIds to the common names of the genes for mice (mmusculus). Finally, we replace the rownames of the current readcounts with the updated names. The reference is https://www.biostars.org/p/147351/. The output for mapped_names is a vector of length less than that of the total number of genes in the readcounts matrix. This is due to some Ensembl names not mapping to an external gene name. To incorporate all the genes, we must merge the two dataframes such that the corresponding external gene name is NA for an Ensembl name initially without an external gene name. This allows us to compare our results with the paper.
+
+```{r}
+ens_db_wt <- c(rownames(DESeq.ds_db_wt))
+ens_db_wt <- gsub('\\..*', '', ens_db_wt)
+mouse = useMart(biomart="ensembl", dataset="mmusculus_gene_ensembl")
+mapped_names <- getBM(attributes=c('ensembl_gene_id',
+                      'external_gene_name'),
+         values = ens_db_wt,
+         mart = mouse)
+ens_df_db_wt <- as.data.frame(ens_db_wt)
+colnames(ens_df_db_wt) <- "ensembl_gene_id"
+idmap_db_wt = merge(x = ens_df_db_wt, y = mapped_names, by="ensembl_gene_id", all.x=TRUE)
+idmap_db_wt$external_gene_name <- ifelse(is.na(idmap_db_wt$external_gene_name), idmap_db_wt$ensembl_gene_id, idmap_db_wt$external_gene_name)
+row.names(DESeq.ds_db_wt) <- make.names(idmap_db_wt[,2])
+```
+
+
+### Calculating and applying the size factor for diabetic and wild type only
+
+Below we show the size factors of the samples.
+
+```{r}
+DESeq.ds_db_wt <- estimateSizeFactors(DESeq.ds_db_wt)
+# calculate SFs, add them to object
+plot(sizeFactors(DESeq.ds_db_wt),colSums(counts(DESeq.ds_db_wt)), ylab = "library sizes", xlab = "size factors", cex = .6 )
+```
+
+### Reducing the dependence of the variance on the mean
+
+First, we use the rlog function which transforms the read counts to the log2 scale while simultaneously minimizing the difference between samples for rows with small counts and taking differences between library sizes of the samples into account. More specifically, the expression values are modeled in such a manner that their dispersion is not based on the actual variability an individual gene may show across its replicates, instead, its variability is based on the general dispersion-mean trend over the entire dataset.
+
+```{r}
+# this actually generates a different type of object!
+DESeq.rlog_db_wt <-rlog(DESeq.ds_db_wt, blind = TRUE)
+## set blind = FALSE if the conditions are expected to introduce
+## strong differences in a large proportion of the genes
+```
+
+Let’s visually check the results of the rlog transformation for the first diabetes sample and first wild-type sample:
+
+```{r}
+par(mfrow=c(1,2))
+
+
+## the rlog-transformed counts are stored in the accessor "assay"
+plot(assay(DESeq.rlog_db_wt)[,1],assay(DESeq.rlog_db_wt)[,2],cex=.1, main = "rlog transformed",xlab =colnames(assay(DESeq.rlog_db_wt[,1])),ylab =colnames(assay(DESeq.rlog_db_wt[,4])) )
+```
+
+Below we create an assay for the rlog-transform of the readcounts.
+
+```{r}
+rlog.norm.counts_db_wt <-assay(DESeq.rlog_db_wt)
+```
+
+Below we show the effect of the rlog-transformed read counts.
+
+```{r}
+## rlog-transformed read counts
+msd_plot_db_wt <- vsn::meanSdPlot( rlog.norm.counts_db_wt, ranks=FALSE, plot = FALSE)
+msd_plot_db_wt$gg+ ggtitle("rlog transformation") + coord_cartesian(ylim =c(0,3))
+```
+
+Below we relevel the data so that the reference is the wild-type samples.
+
+```{r}
+DESeq.ds_db_wt
+DESeq.ds_db_wt$condition_db_wt
+DESeq.ds_db_wt$condition_db_wt <- relevel(DESeq.ds_db_wt$condition_db_wt, ref = 'WT')
+```
+
+Now, let's perform DE analysis!
+
+```{r}
+DESeq.ds_db_wt <- DESeq(DESeq.ds_db_wt)
+```
+
+Below we look at the DE in a new way. We can obtain unfiltered GLM results, i.e. without outlier removal or independent filtering with the following call which results in no p-values having an NA as a result:
+
+```{r}
+DGE.results_db_wt <- results(DESeq.ds_db_wt)
+dim(DGE.results_db_wt)
+# Find how many significant genes. There are a large number of genes that have NA because the program knows that they have no chance at being significant and therefore does not even produce an output 
+table(DGE.results_db_wt$padj < 0.05, useNA = "ifany")
+
+
+```
+
+The top 3 most significant genes and their corresponding adjusted p-values are shown below.
+
+```{r}
+row.names(DGE.results_db_wt)[which(DGE.results_db_wt$padj<1e-210)]
+DGE.results_db_wt$padj[which(DGE.results_db_wt$padj<1e-210)]
+```
+
+Below we create a heatmap using complexheatmap for all significant genes.
+
+```{r}
+DGEgenes_db_wt <- subset(DGE.results_db_wt, padj < 0.05) %>% rownames
+row.names(DESeq.rlog_db_wt) <- rownames(DGE.results_db_wt)
+rlog.dge_db_wt <- DESeq.rlog_db_wt[DGEgenes_db_wt, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_db_wt), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        show_row_name = FALSE,
+        cluster_columns = FALSE,
+        split=cutGroups,
+        column_title = "Heatmap For DB vs. WT Significant Genes")
+```
+
+### MA-plots and volcano plots
+
+The MA-plot provides a global view of the differential genes, with the log2 fold change on the y-axis over the mean of normalized counts. Genes that pass the significance threshold (adjusted p.value <0.05) are colored in blue.
+
+```{r}
+plotMA(DGE.results_db_wt, alpha = 0.05, main = "Test: p.adj.value < 0.05 DB vs. WT", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+```
+
+Below we create a volcano plot showing the significant genes with respect to logFC change and p-value in red for the comparison between diabetic and wild-type mice.
+
+```{r fig.width = 12, fig.height = 8}
+library(EnhancedVolcano)
+vp1_db_wt <-EnhancedVolcano(DGE.results_db_wt,lab =rownames(DGE.results_db_wt),x ='log2FoldChange',y ='padj', pCutoff = 0.05, title = "DB vs WT")
+print(vp1_db_wt)
+```
+
+## Shrinking logFC
+
+Adjusts for types of noise we might see and tend to be more reliable and more robust. We also find the upregulated and downregulated genes based on the log2 Fold Change for the genes that we have already determined to be significant by their p-value. We find a total of 1619 upregulated genes and 473 downregulated genes.
+
+```{r}
+# BiocManager::install('apeglm')
+DGE.results.shrink_db_wt <- lfcShrink(DESeq.ds_db_wt, coef = 2, type = 'apeglm')
+
+upregulated_genes_values_db_wt <- DGE.results.shrink_db_wt$log2FoldChange[DGE.results.shrink_db_wt$log2FoldChange > 1]
+upregulated_genes_values_db_wt_sorted <- upregulated_genes_values_db_wt[sort.list(upregulated_genes_values_db_wt)]
+top_fifty_upregulated_genes_db_wt <- names(upregulated_genes_values_db_wt_sorted[1:50])
+
+downregulated_genes_values_db_wt <- DGE.results.shrink_db_wt$log2FoldChange[DGE.results.shrink_db_wt$log2FoldChange < -1]
+downregulated_genes_values_db_wt_sorted <- downregulated_genes_values_db_wt[sort.list(downregulated_genes_values_db_wt)]
+top_fifty_downregulated_genes_db_wt <- names(downregulated_genes_values_db_wt_sorted[1:50])
+
+upregulated_genes_db_wt <- row.names(DGE.results.shrink_db_wt)[DGE.results.shrink_db_wt$log2FoldChange > 1]
+downregulated_genes_db_wt <- row.names(DGE.results.shrink_db_wt)[DGE.results.shrink_db_wt$log2FoldChange < -1]
+
+finding_upregulated_genes_in_significant_genes_db_wt <- upregulated_genes_db_wt %in% DGEgenes_db_wt
+final_upregulated_genes_db_wt <- upregulated_genes_db_wt[finding_upregulated_genes_in_significant_genes_db_wt]
+
+finding_downregulated_genes_in_significant_genes_db_wt <- downregulated_genes_db_wt %in% DGEgenes_db_wt
+final_downregulated_genes_db_wt <- downregulated_genes_db_wt[finding_downregulated_genes_in_significant_genes_db_wt]
+print(length(final_upregulated_genes_db_wt))
+print(length(final_downregulated_genes_db_wt))
+
+```
+
+Below we create a heatmap using complexheatmap for the top 50 upregulated genes. We see that diabetes sample 2 is more like the wild type samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the wild type and diabetes samples, but closer to the other diabetes samples.
+
+```{r fig.height=10}
+DGEgenes_db_wt_top_fifty_upregulated <- top_fifty_upregulated_genes_db_wt
+rlog.dge_db_wt_top_fifty_upregulated <- DESeq.rlog_db_wt[DGEgenes_db_wt_top_fifty_upregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_db_wt_top_fifty_upregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. WT: Top 50 Upregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Below we create a heatmap using complexheatmap for the top 50 downregulated genes. We see that diabetes sample 2 is more like the wild type samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the wild type and diabetes samples, but closer to the other diabetes samples.
+
+```{r fig.height=10}
+DGEgenes_db_wt_top_fifty_downregulated <- top_fifty_downregulated_genes_db_wt
+rlog.dge_db_wt_top_fifty_downregulated <- DESeq.rlog_db_wt[DGEgenes_db_wt_top_fifty_downregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_db_wt_top_fifty_downregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. WT: Top 50 Downregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Next we show the effect of the shrinkage on the MA plot:
+
+```{r fig.height=10, fig.width=12}
+plotMA(DGE.results.shrink_db_wt,alpha = 0.05, main = "DB vs WT: with logFC shrinkage", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+
+par(mfrow =c(1,2))
+plotMA(DGE.results_db_wt, alpha = 0.05,main = "no shrinkage", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+DGE.results.shrink_db_wt <-lfcShrink(DESeq.ds_db_wt, coef = 2, type = "apeglm")
+plotMA(DGE.results.shrink_db_wt,alpha = 0.05, main = "with logFC shrinkage", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+```
+
+Below we show a volcano plot after the logFC shrink operation. We also compare the gene expression differences between the diabetic and wild-type mice with and without the logFC shrink. We see that with the shrinkage, we find a few more significant genes.
+
+```{r fig.width=12, fig.height=8}
+vp2_db_wt <-EnhancedVolcano(DGE.results.shrink_db_wt,lab =rownames(DGE.results.shrink_db_wt),x ='log2FoldChange',y ='padj', pCutoff = 0.05,title = "DB vs WT: with logFC shrinkage")
+library(patchwork)
+print(vp2_db_wt)
+vp1_db_wt+vp2_db_wt
+```
+
+## GO Term and Pathway Enrichments
+
+Because GO analysis requires us to use the Ensembl gene names, we have to redo everything without using Biomart to convert the gene names to the external gene names. We just need to repeat the same steps as before without changing the gene names. Below we generate the DESeqDataSet from our counts for the wild-type and diabetic mice.
+
+```{r}
+DESeq.ds_db_wt_go <- DESeqDataSetFromMatrix(countData = as.matrix(readcounts_db_wt), colData = sample_info_db_wt, design = ~ condition_db_wt)
+DESeq.ds_db_wt_go
+head(counts(DESeq.ds_db_wt_go))
+```
+
+Remove genes with no reads:
+
+```{r}
+dim(DESeq.ds_db_wt_go)
+
+keep_genes_db_wt <- rowSums(counts(DESeq.ds_db_wt_go)) > 0
+DESeq.ds_db_wt_go <- DESeq.ds_db_wt_go[ keep_genes_db_wt, ]
+dim(DESeq.ds_db_wt_go)
+```
+
+Below we relevel the data so that the reference is the wild-type samples.
+
+```{r}
+DESeq.ds_db_wt_go
+DESeq.ds_db_wt_go$condition_db_wt
+DESeq.ds_db_wt_go$condition_db_wt <- relevel(DESeq.ds_db_wt_go$condition_db_wt, ref = 'WT')
+```
+
+Now, let's perform DE analysis!
+
+```{r}
+DESeq.ds_db_wt_go <- DESeq(DESeq.ds_db_wt_go)
+```
+
+Below we look at the DE in a new way. We can obtain unfiltered GLM results, i.e. without outlier removal or independent filtering with the following call which results in no p-values having an NA as a result:
+
+```{r}
+DGE.results_db_wt_go <- results(DESeq.ds_db_wt_go)
+dim(DGE.results_db_wt_go)
+# Find how many significant genes. There are a large number of genes that have NA because the program knows that they have no chance at being significant and therefore does not even produce an output 
+table(DGE.results_db_wt_go$padj < 0.05, useNA = "ifany")
+```
+
+Adjusts for types of noise we might see and tend to be more reliable and more robust. We also find the upregulated and downregulated genes based on the log2 Fold Change for the genes that we have already determined to be significant by their p-value. We find a total of 1619 upregulated genes and 473 downregulated genes.
+
+```{r}
+# BiocManager::install('apeglm')
+DGE.results.shrink_db_wt_go <- lfcShrink(DESeq.ds_db_wt_go, coef = 2, type = 'apeglm')
+```
+
+Below we find all significant genes.
+
+```{r}
+DGEgenes_db_wt_go <- subset(DGE.results_db_wt_go, padj < 0.05) %>% rownames
+```
+
+Below we run GO analysis using the biological properties subontology (ont = "BP"). We output a dotplot and graph showing the results.
+
+```{r fig.height=10, fig.width=10}
+#BiocManager::install("clusterProfiler")
+library(enrichplot)
+library(org.Mm.eg.db)
+library(clusterProfiler)
+# Change rownames so that they are readable for the GO analysis by removing all decimals and numbers after
+DGEgenes_db_wt_go <- gsub("\\..*","",DGEgenes_db_wt_go)
+gene_ontology_results <- enrichGO(gene = DGEgenes_db_wt_go,
+                OrgDb         = org.Mm.eg.db,
+                keyType       = 'ENSEMBL',
+                ont           = "BP",
+                pAdjustMethod = "BH")
+
+dotplot(gene_ontology_results, showCategory=30)
+plotGOgraph(gene_ontology_results)
+```
+
+Below we run GO analysis using the cellular components subontology (ont = "CC"). We output a dotplot and graph showing the results.
+
+```{r fig.height=10, fig.width=10}
+#BiocManager::install("clusterProfiler")
+library(enrichplot)
+library(org.Mm.eg.db)
+library(clusterProfiler)
+# Change rownames so that they are readable for the GO analysis by removing all decimals and numbers after
+DGEgenes_db_wt_go <- gsub("\\..*","",DGEgenes_db_wt_go)
+gene_ontology_results <- enrichGO(gene = DGEgenes_db_wt_go,
+                OrgDb         = org.Mm.eg.db,
+                keyType       = 'ENSEMBL',
+                ont           = "CC",
+                pAdjustMethod = "BH")
+dotplot(gene_ontology_results, showCategory=30)
+
+plotGOgraph(gene_ontology_results)
+```
+
+Below we run GO analysis using the molecular function subontology (ont = "MF"). We output a dotplot and graph showing the results.
+
+```{r fig.height=10, fig.width=10}
+#BiocManager::install("clusterProfiler")
+library(enrichplot)
+library(org.Mm.eg.db)
+library(clusterProfiler)
+# Change rownames so that they are readable for the GO analysis by removing all decimals and numbers after
+DGEgenes_db_wt_go <- gsub("\\..*","",DGEgenes_db_wt_go)
+gene_ontology_results <- enrichGO(gene = DGEgenes_db_wt_go,
+                OrgDb         = org.Mm.eg.db,
+                keyType       = 'ENSEMBL',
+                ont           = "MF",
+                pAdjustMethod = "BH")
+dotplot(gene_ontology_results, showCategory=30)
+
+plotGOgraph(gene_ontology_results)
+```
+
+
+# Analysis Using Featurecounts Matrix From Paper
+
+We first import our libraries and featurecounts. We notice that there is one more sample than we had. The first 9 samples correspond to the actual samples used so we need to cut out the last from the analysis.
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(magrittr)
+library(DESeq2)
+library(hexbin)
+library(org.Sc.sgd.db)
+library(EnhancedVolcano)
+library(patchwork)
+readcounts_paper <- paste0("featurecounts_from_paper.txt") %>% read.table(., header=TRUE)
+```
+
+
+Below we take the columns corresponding to the diabetic and wild-type mice only for a direct comparison between these two sample types. We call the correct columns in so that the first 3 are wild type and the last 3 are diabetic mice. We also keep the gene names column.
+
+```{r}
+## Take only the last 6 columns (heterozygous and wild type)
+readcounts_paper_db_wt <- readcounts_paper[ , c(1, 5:6, 8, 7, 9:10)]
+
+head(readcounts_paper_db_wt)
+```
+
+Below we make the geneid values the rownames and Change Column names. 
+
+```{r}
+row.names(readcounts_paper_db_wt) <- make.names(readcounts_paper_db_wt$geneid)
+readcounts_paper_db_wt[[1]] <- NULL
+
+colnames(readcounts_paper_db_wt) <- c("WT_1", "WT_2", "WT_3", "DIABETES_1", "DIABETES_2", "DIABETES_3")
+str(readcounts_paper_db_wt)
+```
+
+Below we create a dataframe for the gene information for each sample.
+
+```{r}
+ #let's use the info from our readcounts objects
+sample_info_paper_db_wt <- DataFrame(condition_paper_db_wt =gsub("_[0-9]+", "",names(readcounts_paper_db_wt)),row.names =names(readcounts_paper_db_wt) )
+
+sample_info_paper_db_wt # rows contain gene information for each sample
+```
+
+### Generate the DESeqDataSet for wild-type and diabetes only
+
+Below we generate the DESeqDataSet from our counts for the wild-type and diabetic mice.
+
+```{r}
+DESeq.ds_paper_db_wt <- DESeqDataSetFromMatrix(countData = as.matrix(readcounts_paper_db_wt), colData = sample_info_paper_db_wt, design = ~ condition_paper_db_wt)
+DESeq.ds_paper_db_wt
+head(counts(DESeq.ds_paper_db_wt))
+```
+
+Below we show the number of reads sequenced for each sample.
+
+```{r}
+colSums(counts(DESeq.ds_paper_db_wt)) %>% barplot
+```
+
+Remove genes with no reads:
+
+```{r}
+dim(DESeq.ds_paper_db_wt)
+
+keep_genes_paper_db_wt <- rowSums(counts(DESeq.ds_paper_db_wt)) > 0
+DESeq.ds_paper_db_wt <- DESeq.ds_paper_db_wt[ keep_genes_paper_db_wt, ]
+dim(DESeq.ds_paper_db_wt)
+```
+
+### Calculating and applying the size factor for diabetic and wild type only
+
+Below we show the size factors of the samples.
+
+```{r}
+DESeq.ds_paper_db_wt <- estimateSizeFactors(DESeq.ds_paper_db_wt)
+# calculate SFs, add them to object
+plot(sizeFactors(DESeq.ds_paper_db_wt),colSums(counts(DESeq.ds_paper_db_wt)), ylab = "library sizes", xlab = "size factors", cex = .6 )
+```
+
+### Reducing the dependence of the variance on the mean
+
+First, we use the rlog function which transforms the read counts to the log2 scale while simultaneously minimizing the difference between samples for rows with small counts and taking differences between library sizes of the samples into account. More specifically, the expression values are modeled in such a manner that their dispersion is not based on the actual variability an individual gene may show across its replicates, instead, its variability is based on the general dispersion-mean trend over the entire dataset.
+
+```{r}
+# this actually generates a different type of object!
+DESeq.rlog_paper_db_wt <-rlog(DESeq.ds_paper_db_wt, blind = TRUE)
+## set blind = FALSE if the conditions are expected to introduce
+## strong differences in a large proportion of the genes
+```
+
+Let’s visually check the results of the rlog transformation for the first diabetes sample and first wild-type sample:
+
+```{r}
+par(mfrow=c(1,2))
+
+
+## the rlog-transformed counts are stored in the accessor "assay"
+plot(assay(DESeq.rlog_paper_db_wt)[,1],assay(DESeq.rlog_paper_db_wt)[,2],cex=.1, main = "rlog transformed",xlab =colnames(assay(DESeq.rlog_paper_db_wt[,1])),ylab =colnames(assay(DESeq.rlog_paper_db_wt[,4])) )
+```
+
+Below we create an assay for the rlog-transform of the readcounts.
+
+```{r}
+rlog.norm.counts_paper_db_wt <-assay(DESeq.rlog_paper_db_wt)
+```
+
+Below we show the effect of the rlog-transformed read counts.
+
+```{r}
+## rlog-transformed read counts
+msd_plot_paper_db_wt <- vsn::meanSdPlot( rlog.norm.counts_paper_db_wt, ranks=FALSE, plot = FALSE)
+msd_plot_paper_db_wt$gg+ ggtitle("rlog transformation") + coord_cartesian(ylim =c(0,3))
+```
+
+Below we relevel the data so that the reference is the wild-type samples.
+
+```{r}
+DESeq.ds_paper_db_wt
+DESeq.ds_paper_db_wt$condition_paper_db_wt
+DESeq.ds_paper_db_wt$condition_paper_db_wt <- relevel(DESeq.ds_paper_db_wt$condition_paper_db_wt, ref = 'WT')
+```
+
+Now, let's perform DE analysis!
+
+```{r}
+DESeq.ds_paper_db_wt <- DESeq(DESeq.ds_paper_db_wt)
+```
+
+Below we look at the DE in a new way. We can obtain unfiltered GLM results, i.e. without outlier removal or independent filtering with the following call which results in no p-values having an NA as a result:
+
+```{r}
+DGE.results_paper_db_wt <- results(DESeq.ds_paper_db_wt)
+dim(DGE.results_paper_db_wt)
+# Find how many significant genes. There are a large number of genes that have NA because the program knows that they have no chance at being significant and therefore does not even produce an output 
+table(DGE.results_paper_db_wt$padj < 0.05, useNA = "ifany")
+```
+
+The top 4 most significant genes and their corresponding adjusted p-values are shown below.
+
+```{r}
+row.names(DGE.results_paper_db_wt)[which(DGE.results_paper_db_wt$padj<1e-210)]
+DGE.results_paper_db_wt$padj[which(DGE.results_paper_db_wt$padj<1e-210)]
+```
+
+Below we create a heatmap using complexheatmap for all significant genes.
+
+```{r}
+library(ComplexHeatmap)
+DGEgenes_paper_db_wt <- subset(DGE.results_paper_db_wt, padj < 0.05) %>% rownames
+row.names(DESeq.rlog_paper_db_wt) <- rownames(DGE.results_paper_db_wt)
+rlog.dge_paper_db_wt <- DESeq.rlog_paper_db_wt[DGEgenes_paper_db_wt, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_paper_db_wt), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        show_row_name = FALSE,
+        cluster_columns = FALSE,
+        split=cutGroups,
+        column_title = "Heatmap For DB vs. WT Significant Genes")
+```
+
+### MA-plots and volcano plots
+
+The MA-plot provides a global view of the differential genes, with the log2 fold change on the y-axis over the mean of normalized counts. Genes that pass the significance threshold (adjusted p.value <0.05) are colored in blue.
+
+```{r}
+DESeq2::plotMA(DGE.results_paper_db_wt, alpha = 0.05, main = "Test: p.adj.value < 0.05 DB vs. WT", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+```
+
+Below we create a volcano plot to show the most significant gene differences in expression between the heterozygous and diabetes mice.
+
+```{r fig.width=12, fig.height=8}
+library(EnhancedVolcano)
+vp1_paper_db_wt <-EnhancedVolcano(DGE.results_paper_db_wt,lab =rownames(DGE.results_paper_db_wt),x ='log2FoldChange',y ='padj', pCutoff = 0.05, title = "DB vs HET")
+print(vp1_paper_db_wt)
+```
+
+## Shrinking logFC
+
+Adjusts for types of noise we might see and tend to be more reliable and more robust. We also find the upregulated and downregulated genes based on the log2 Fold Change for the genes that we have already determined to be significant by their p-value. We find a total of 1619 upregulated genes and 473 downregulated genes.
+
+```{r}
+# BiocManager::install('apeglm')
+DGE.results.shrink_paper_db_wt <- lfcShrink(DESeq.ds_paper_db_wt, coef = 2, type = 'apeglm')
+
+upregulated_genes_values_paper_db_wt <- DGE.results.shrink_paper_db_wt$log2FoldChange[DGE.results.shrink_paper_db_wt$log2FoldChange > 1]
+upregulated_genes_values_paper_db_wt_sorted <- upregulated_genes_values_paper_db_wt[sort.list(upregulated_genes_values_paper_db_wt)]
+top_fifty_upregulated_genes_paper_db_wt <- names(upregulated_genes_values_paper_db_wt_sorted[1:50])
+
+downregulated_genes_values_paper_db_wt <- DGE.results.shrink_paper_db_wt$log2FoldChange[DGE.results.shrink_paper_db_wt$log2FoldChange < -1]
+downregulated_genes_values_paper_db_wt_sorted <- downregulated_genes_values_paper_db_wt[sort.list(downregulated_genes_values_paper_db_wt)]
+top_fifty_downregulated_genes_paper_db_wt <- names(downregulated_genes_values_paper_db_wt_sorted[1:50])
+
+upregulated_genes_paper_db_wt <- row.names(DGE.results.shrink_paper_db_wt)[DGE.results.shrink_paper_db_wt$log2FoldChange > 1]
+downregulated_genes_paper_db_wt <- row.names(DGE.results.shrink_paper_db_wt)[DGE.results.shrink_paper_db_wt$log2FoldChange < -1]
+
+finding_upregulated_genes_in_significant_genes_paper_db_wt <- upregulated_genes_paper_db_wt %in% DGEgenes_paper_db_wt
+final_upregulated_genes_paper_db_wt <- upregulated_genes_paper_db_wt[finding_upregulated_genes_in_significant_genes_paper_db_wt]
+
+finding_downregulated_genes_in_significant_genes_paper_db_wt <- downregulated_genes_paper_db_wt %in% DGEgenes_paper_db_wt
+final_downregulated_genes_paper_db_wt <- downregulated_genes_paper_db_wt[finding_downregulated_genes_in_significant_genes_paper_db_wt]
+print(length(final_upregulated_genes_paper_db_wt))
+print(length(final_downregulated_genes_paper_db_wt))
+```
+
+In the paper, the gene Gc is included in the Top 50 genes in terms of increased expression. Below we make a table showing that Gc should not be in the top 50 upregulated genes. This suggests to us that the authors included this gene in their top 50 most important genes because they either wanted to specifically show it because they think it is important, or they put a larger weight on adjusted p-value. This suggests that other genes would also be scored differently than just using the log2 FC value for upregulation and downregulation. Therefore, our Top 50 upregulated and Top 50 downregulated genes should not match with those from the paper.
+
+Rank In Upregulated Genes By log2 FC | Gene | log2 FC | padj
+--- | --- | --- | ---
+1 | X1810009J06Rik | 14.39679 | 3.6617e-14
+50 | X1810006J02Rik | 5.245285 | 4.94998e-23
+140 | Gc | 3.44248 | 2.41211e-233
+
+Below we create a heatmap using complexheatmap for the top 50 upregulated genes with respect to log FC value. We see that diabetes sample 2 is more like the wild type samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the wild type and diabetes samples, but closer to the other diabetes samples.
+
+```{r fig.height=10}
+DGEgenes_paper_db_wt_top_fifty_upregulated <- top_fifty_upregulated_genes_paper_db_wt
+rlog.dge_paper_db_wt_top_fifty_upregulated <- DESeq.rlog_paper_db_wt[DGEgenes_paper_db_wt_top_fifty_upregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_paper_db_wt_top_fifty_upregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. WT: Top 50 Upregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Below we create a heatmap using complexheatmap for the top 50 downregulated genes with respect to log FC value. We see that diabetes sample 2 is more like the wild type samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the wild type and diabetes samples, but closer to the other diabetes samples.
+
+```{r fig.height=10}
+DGEgenes_paper_db_wt_top_fifty_downregulated <- top_fifty_downregulated_genes_paper_db_wt
+rlog.dge_paper_db_wt_top_fifty_downregulated <- DESeq.rlog_paper_db_wt[DGEgenes_paper_db_wt_top_fifty_downregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_paper_db_wt_top_fifty_downregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. WT: Top 50 Downregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Below we show the logFC values for the top 50 upregulated genes which are also significant by p-value. 
+
+```{r}
+all_pval_and_logfc_significant_upregulated_genes <- DGE.results.shrink_paper_db_wt[row.names(DGE.results.shrink_paper_db_wt) %in% final_upregulated_genes_paper_db_wt, ]
+sort(all_pval_and_logfc_significant_upregulated_genes$log2FoldChange)[1304:1354]
+```
+
+Below we show the logFC values for the top 50 downregulated genes which are also significant by p-value. 
+
+```{r}
+all_pval_and_logfc_significant_downregulated_genes <- DGE.results.shrink_paper_db_wt[row.names(DGE.results.shrink_paper_db_wt) %in% final_downregulated_genes_paper_db_wt, ]
+sort(all_pval_and_logfc_significant_downregulated_genes$log2FoldChange)[1:50]
+```
+
+Next we show the effect of the shrinkage on the MA plot:
+
+```{r fig.height=10, fig.width=12}
+DESeq2::plotMA(DGE.results.shrink_paper_db_wt,alpha = 0.05, main = "DB vs WT: with logFC shrinkage", ylim =c(-3,3))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+
+par(mfrow =c(1,2))
+DESeq2::plotMA(DGE.results_paper_db_wt, alpha = 0.05, main = "no shrinkage", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+DGE.results.shrink_paper_db_wt <- lfcShrink(DESeq.ds_paper_db_wt, coef = 2, type = "apeglm")
+DESeq2::plotMA(DGE.results.shrink_paper_db_wt,alpha = 0.05, main = "with logFC shrinkage", ylim =c(-4,4))
+abline(h = 1, col = 'red')
+abline(h = -1, col = 'red')
+```
+
+Below we show a volcano plot after the logFC shrink operation. We also compare the gene expression differences between the diabetic and wild-type mice with and without the logFC shrink. We see that with the shrinkage, we find a few more significant genes.
+
+```{r fig.width=12, fig.height=8}
+vp2_paper_db_wt <-EnhancedVolcano(DGE.results.shrink_paper_db_wt, lab =rownames(DGE.results.shrink_paper_db_wt),x ='log2FoldChange',y ='padj', pCutoff = 0.05,title = "DB vs WT: with logFC shrinkage")
+
+library(patchwork)
+print(vp2_paper_db_wt)
+vp1_paper_db_wt + vp2_paper_db_wt
+```
+
