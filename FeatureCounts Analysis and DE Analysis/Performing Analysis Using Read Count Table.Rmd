@@ -440,7 +440,7 @@ vp1_het_wt+vp2_het_wt_with_cutoff
 Below we take the columns corresponding to the diabetic and heterozygous mice only for a direct comparison between these two sample types.
 
 ```{r}
-## Take only the last 6 columns (heterozygous and wild type)
+## Take only the first 6 columns (heterozygous and wild type)
 readcounts_het_db <- readcounts[ , c(1:6)]
 
 head(readcounts_het_db)
@@ -706,7 +706,7 @@ vp1_het_db+vp2_het_db
 Below we take the columns corresponding to the diabetic and wild-type mice only for a direct comparison between these two sample types.
 
 ```{r}
-## Take only the last 6 columns (heterozygous and wild type)
+## Take only the first 3 and last 3 columns (diabetic and wild type)
 readcounts_db_wt <- readcounts[ , c(1:3, 7:9)]
 
 head(readcounts_db_wt)
@@ -1097,7 +1097,7 @@ readcounts_paper <- paste0("featurecounts_from_paper.txt") %>% read.table(., hea
 Below we take the columns corresponding to the diabetic and wild-type mice only for a direct comparison between these two sample types. We call the correct columns in so that the first 3 are wild type and the last 3 are diabetic mice. We also keep the gene names column.
 
 ```{r}
-## Take only the last 6 columns (heterozygous and wild type)
+## Take only the columns for diabetes and wild-type
 readcounts_paper_db_wt <- readcounts_paper[ , c(1, 5:6, 8, 7, 9:10)]
 
 head(readcounts_paper_db_wt)
