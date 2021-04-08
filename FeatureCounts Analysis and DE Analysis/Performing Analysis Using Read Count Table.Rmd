@@ -1367,3 +1367,31 @@ print(vp2_paper_db_wt)
 vp1_paper_db_wt + vp2_paper_db_wt
 ```
 
+
+# Comparing Results To See If This Is Good Model For Dedifferentiation
+
+In the paper, the authors aimed to establish db/db as an animal model for dedifferentiation by using RNA sequencing to compare the gene expression profile in islets isolated from wild-type, db/+ and db/db mice, and qPCR was performed to validate those significant genes. They conclude a reduction in both insulin secretion and the expression of Ins1, Ins2, Glut2, Pdx1 and MafA was indicative of dedifferentiation in db/db islets. Therefore, we have compared our results for these genes using both our counts matrix and the counts matrix of the publication, to see if these genes are found to be significantly downregulated in the diabetic samples when compared with the wild-type samples. 
+
+We find that using our counts matrix, we do not receive large log fold change values for these genes. In fact, at our threshold of log FC < -1, none of them would be considered significantly downregulated. However, we did find that all genes were downregulated to some degree. In addition, none were significant with respect to the adjusted p-value either. The results for our counts are shown below.
+
+```{r}
+DGE.results.shrink_db_wt['Ins1', ]
+DGE.results.shrink_db_wt['Ins2', ]
+DGE.results.shrink_db_wt['Slc2a2', ] # AKA Glut2
+DGE.results.shrink_db_wt['Pdx1', ]
+DGE.results.shrink_db_wt['Mafa', ]
+```
+
+When using the counts matrix from the publication, we find one major discrepancy which is that the Ins2 gene seems to be upregulated, although only to a very small degree, in the diabetes samples. Also, Pdx1, MafA, and Glut2 are shown to be significant at our threshold log FC < -1. These three genes are also significant with respect to adjusted p-value as well.
+
+```{r}
+DGE.results.shrink_paper_db_wt['Ins1', ]
+DGE.results.shrink_paper_db_wt['Ins2', ]
+DGE.results.shrink_paper_db_wt['Slc2a2', ] # AKA Glut2
+DGE.results.shrink_paper_db_wt['Pdx1', ]
+DGE.results.shrink_paper_db_wt['Mafa', ]
+```
+
+
+
+
