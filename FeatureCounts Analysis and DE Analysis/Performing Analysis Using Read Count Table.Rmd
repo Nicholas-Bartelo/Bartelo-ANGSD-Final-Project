@@ -1,7 +1,7 @@
 ---
 title: "Performing Analysis Using Read Count Table"
 author: "Nick Bartelo"
-date: "4/3/2021"
+date: "4/10/2021"
 output: html_document
 ---
 
@@ -122,10 +122,10 @@ plot(assay(DESeq.rlog)[,1],assay(DESeq.rlog)[,2],cex=.1, main = "rlog transforme
 
 Below we plot the first two principal components, which shows us that our samples are shown to have features which group them very well.
 
-```{r}
+```{r, fig.height= 5, fig.width = 10}
 # We set ntop = 500 (the default) to show this represents the top 500 most variable genes used by the PCA
 #jpeg(file="PCA_plot.jpeg")
-plotPCA(DESeq.rlog, ntop = 500) 
+plotPCA(DESeq.rlog, ntop = 500) + theme_bw()
 #dev.off()
 ```
 
@@ -190,9 +190,30 @@ mapped_names <- getBM(attributes=c('ensembl_gene_id',
          mart = mouse)
 ens_df_het_wt <- as.data.frame(ens_het_wt)
 colnames(ens_df_het_wt) <- "ensembl_gene_id"
-idmap_het_wt = merge(x = ens_df_het_wt, y = mapped_names, by="ensembl_gene_id", all.x=TRUE)
+mapped_names_ordered_het_wt <- mapped_names[order(match(mapped_names[,1],ens_df_het_wt[,1])),]
+idmap_het_wt = merge(x = ens_df_het_wt, y = mapped_names_ordered_het_wt, by="ensembl_gene_id", all.x=TRUE)
 idmap_het_wt$external_gene_name <- ifelse(is.na(idmap_het_wt$external_gene_name), idmap_het_wt$ensembl_gene_id, idmap_het_wt$external_gene_name)
-row.names(DESeq.ds_het_wt) <- make.names(idmap_het_wt[,2])
+idmap_ordered_het_wt <- idmap_het_wt[order(match(idmap_het_wt[,1],ens_df_het_wt[,1])),]
+row.names(DESeq.ds_het_wt) <- make.names(idmap_ordered_het_wt[,2])
+```
+
+Below we show that there are 540 Ensembl IDs that did not have an external count value and needed to be given their Ensembl ID value instead of the NA value given to these genes. We did that in the code above. 
+
+```{r}
+library(VennDiagram)
+all_genes_het_wt <- ens_het_wt
+overlap_all_genes_het_wt <- intersect(all_genes_het_wt, mapped_names$ensembl_gene_id)
+grid.newpage()
+venn.plot <- draw.pairwise.venn(area1 = length(mapped_names$ensembl_gene_id),
+                           area2 = length(all_genes_het_wt),
+                           cross.area = length(overlap_all_genes_het_wt),
+                           c("Mapping Ids", "Count Ensembl IDs"),
+                           scaled = TRUE,
+                           fill = c("green", "blue"),
+                           cex = 1.5,
+                           cat.cex = 1.5,
+                           cat.pos = c(320, 25),
+                           cat.dist = .05) 
 ```
 
 ### Calculating and applying the size factor for heterozygous and wild type only
@@ -281,6 +302,7 @@ DGEgenes_het_wt <- subset(DGE.results_het_wt, padj < 0.05) %>% rownames
 row.names(DESeq.rlog_het_wt) <- rownames(DGE.results_het_wt)
 rlog.dge_het_wt <- DESeq.rlog_het_wt[DGEgenes_het_wt, ] %>% assay
 z.mat <- t(scale(t(rlog.dge_het_wt), center=TRUE, scale=TRUE))
+colnames(z.mat) = c('HET_1', 'HET_2', 'HET_3', 'WT_1', 'WT_2', 'WT_3')
 hcDat <- hclust(dist(z.mat))
 cutGroups <- cutree(hcDat, h=4)
 Heatmap(z.mat, name = "z-score",
@@ -334,47 +356,56 @@ finding_downregulated_genes_in_significant_genes <- downregulated_genes_het_wt %
 final_downregulated_genes_het_wt <- downregulated_genes_het_wt[finding_downregulated_genes_in_significant_genes]
 print(final_upregulated_genes_het_wt)
 print(final_downregulated_genes_het_wt)
+
+# Below we find the top 27 upregulated genes that are also significant
+double_significant_upregulated_genes_het_wt <- DGE.results.shrink_het_wt[final_upregulated_genes_het_wt, ]
+top_27_significant_and_upregulated_genes_het_wt <- rownames(double_significant_upregulated_genes_het_wt)[double_significant_upregulated_genes_het_wt$log2FoldChange > 1]
+
+# Below we find the top 8 downregulated genes that are also significant
+double_significant_downregulated_genes_het_wt <- DGE.results.shrink_het_wt[final_downregulated_genes_het_wt, ]
+top_8_significant_and_downregulated_genes_het_wt <- rownames(double_significant_downregulated_genes_het_wt)[double_significant_downregulated_genes_het_wt$log2FoldChange < -1]
 ```
+
 
  | Significant Gene Name | Upregulated or Downregulated
 --- | --- | ---
-1 | Rnf114 | Upregulated
-2 | Slc39a6 | Upregulated
-3 | Slk | Upregulated
-4 | Arl8a | Upregulated
-5 | Ube2t | Upregulated
-6 | Auts2 | Upregulated
-7 | Tmem63b | Upregulated
-8 | Cdh6 | Upregulated
-9 | Cmklr1 | Upregulated
-10 | Pip5kl1 | Upregulated
-11 | Zfp445 | Upregulated
-12 | Trmt1l | Upregulated
-13 | Ercc6 | Upregulated
-14 | Gm9939 | Upregulated
-15 | Gabra5 | Upregulated
-16 | Gm22739 | Upregulated
-17 | Gm10570 | Upregulated
-18 | Tldc2 | Upregulated
-19 | Fam83c | Upregulated
-20 | ENSMUSG00000077309 (n-R5s8) | Upregulated
-21 | ENSMUSG00000077829 (Gm23237) | Upregulated
-22 | Gm5210 | Upregulated
-23 | Gm17771 | Upregulated
-24 | Gm44163 | Upregulated
-25 | Gm44241 | Upregulated
-26 | D9Wsu149 | Upregulated
-27 | Gm49311 | Upregulated
-28 | Brinp2 | Downregulated
-29 | Gm24695 | Downregulated
-30 | Hdac8 | Downregulated
-31 | Gm37736 | Downregulated
-32 | Gm20239 | Downregulated
-33 | Gm42536 | Downregulated
-34 | Gm44041 | Downregulated
-35 | X2610306O10Rik | Downregulated
+1 | Aqp12 | Upregulated
+2 | Cpb1 | Upregulated
+3 | Serpini2 | Upregulated
+4 | Amy2a5 | Upregulated
+5 | Amy1 | Upregulated
+6 | Cela2a | Upregulated
+7 | Try10 | Upregulated
+8 | Erp27 | Upregulated
+9 | Klk1 | Upregulated
+10 | Nupr1 | Upregulated
+11 | Zg16 | Upregulated
+12 | Gm26532 | Upregulated
+13 | Ces1d | Upregulated
+14 | Ap3s1.ps2 | Upregulated
+15 | Ctrl | Upregulated
+16 | Rbm15b | Upregulated
+17 | Gamt | Upregulated
+18 | Gm15344 | Upregulated
+19 | Pah | Upregulated
+20 | Ddit3 | Upregulated
+21 | Slc39a5 | Upregulated
+22 | Rnase1 | Upregulated
+23 | Cela1 | Upregulated
+24 | Clps | Upregulated
+25 | Tff2 | Upregulated
+26 | Spink1 | Upregulated
+27 | Pnliprp1 | Upregulated
+28 | Fn1 | Downregulated
+29 | Mir6236 | Downregulated
+30 | Lars2 | Downregulated
+31 | ENSMUSG00000076258 (Gm23935) | Downregulated
+32 | ENSMUSG00000079620 (Muc4) | Downregulated
+33 | Gm15564 | Downregulated
+34 | Gm49839 | Downregulated
+35 | ENSMUSG00000106106 (CT010467.1) | Downregulated
 
-Below we create a heatmap using complexheatmap for the top 25 upregulated genes. We see that heterozygous sample 3 is has a much greater contrast with the wild-type samples than the other two heterozgyous samples.
+Below we create a heatmap using complexheatmap for the top 25 upregulated genes. We see that heterozygous sample 3 has a much greater contrast with the wild-type samples than the other two heterozgyous samples.
 
 ```{r fig.height=10}
 DGEgenes_het_wt_top_twentyfive_upregulated <- top_twentyfive_upregulated_genes_het_wt
@@ -390,6 +421,23 @@ Heatmap(z.mat, name = "z-score",
         split=cutGroups)
 ```
 
+Below we create a heatmap using complexheatmap for the top 27 upregulated genes being significant in terms of p-value. 
+
+```{r fig.height=10}
+DGEgenes_het_wt_top_twenty_seven_upregulated <- top_27_significant_and_upregulated_genes_het_wt
+rlog.dge_het_wt_top_twenty_seven_upregulated <- DESeq.rlog_het_wt[DGEgenes_het_wt_top_twenty_seven_upregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_wt_top_twenty_seven_upregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "HET vs. WT: Top 27 Significant and Upregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+
 Below we do the same for the 9 downregulated genes we concluded to have a logFC value less than -1.
 
 ```{r fig.height=10}
@@ -400,6 +448,22 @@ hcDat <- hclust(dist(z.mat))
 cutGroups <- cutree(hcDat, h=4)
 Heatmap(z.mat, name = "z-score",
         column_title = "HET vs. WT: Top 9 Downregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Below we create a heatmap using complexheatmap for the top 8 upregulated genes being significant in terms of p-value. 
+
+```{r fig.height=10}
+DGEgenes_het_wt_top_eight_downregulated <- top_8_significant_and_downregulated_genes_het_wt
+rlog.dge_het_wt_top_eight_downregulated <- DESeq.rlog_het_wt[DGEgenes_het_wt_top_eight_downregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_wt_top_eight_downregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "HET vs. WT: Top 8 Significant and Downregulated Genes",
         column_title_gp = gpar(fontsize = 10),
         show_row_name = TRUE,
         cluster_columns = FALSE,
@@ -496,11 +560,31 @@ mapped_names <- getBM(attributes=c('ensembl_gene_id',
          mart = mouse)
 ens_df_het_db <- as.data.frame(ens_het_db)
 colnames(ens_df_het_db) <- "ensembl_gene_id"
-idmap_het_db = merge(x = ens_df_het_db, y = mapped_names, by="ensembl_gene_id", all.x=TRUE)
+mapped_names_ordered_het_db <- mapped_names[order(match(mapped_names[,1],ens_df_het_db[,1])),]
+idmap_het_db = merge(x = ens_df_het_db, y = mapped_names_ordered_het_db, by="ensembl_gene_id", all.x=TRUE)
 idmap_het_db$external_gene_name <- ifelse(is.na(idmap_het_db$external_gene_name), idmap_het_db$ensembl_gene_id, idmap_het_db$external_gene_name)
-row.names(DESeq.ds_het_db) <- make.names(idmap_het_db[,2])
+idmap_ordered_het_db <- idmap_het_db[order(match(idmap_het_db[,1],ens_df_het_db[,1])),]
+row.names(DESeq.ds_het_db) <- make.names(idmap_ordered_het_db[,2])
 ```
 
+Below we show that there are 559 Ensembl IDs that did not have an external count value and needed to be given their Ensembl ID value instead of the NA value given to these genes. We did that in the code above. 
+
+```{r}
+library(VennDiagram)
+all_genes_het_db <- ens_het_db
+overlap_all_genes_het_db <- intersect(all_genes_het_db, mapped_names$ensembl_gene_id)
+grid.newpage()
+venn.plot <- draw.pairwise.venn(area1 = length(mapped_names$ensembl_gene_id),
+                           area2 = length(all_genes_het_db),
+                           cross.area = length(overlap_all_genes_het_db),
+                           c("Mapping Ids", "Count Ensembl IDs"),
+                           scaled = TRUE,
+                           fill = c("green", "blue"),
+                           cex = 1.5,
+                           cat.cex = 1.5,
+                           cat.pos = c(320, 25),
+                           cat.dist = .05) 
+```
 
 ### Calculating and applying the size factor for heterozygous and wild type only
 
@@ -585,7 +669,7 @@ DGEgenes_het_db <- subset(DGE.results_het_db, padj < 0.05) %>% rownames
 row.names(DESeq.rlog_het_db) <- rownames(DGE.results_het_db)
 rlog.dge_het_db <- DESeq.rlog_het_db[DGEgenes_het_db, ] %>% assay
 z.mat <- t(scale(t(rlog.dge_het_db), center=TRUE, scale=TRUE))
-z.mat <- t(scale(t(rlog.dge_het_wt), center=TRUE, scale=TRUE))
+colnames(z.mat) = c('DB_1', 'DB_2', 'DB_3', 'HET_1', 'HET_2', 'HET_3')
 hcDat <- hclust(dist(z.mat))
 cutGroups <- cutree(hcDat, h=4)
 Heatmap(z.mat, name = "z-score",
@@ -640,6 +724,14 @@ finding_downregulated_genes_in_significant_genes_het_db <- downregulated_genes_h
 final_downregulated_genes_het_db <- downregulated_genes_het_db[finding_downregulated_genes_in_significant_genes_het_db]
 print(length(final_upregulated_genes_het_db))
 print(length(final_downregulated_genes_het_db))
+
+# Below we find the top 50 upregulated genes that are also significant
+double_significant_upregulated_genes_het_db <- DGE.results.shrink_het_db[final_upregulated_genes_het_db, ]
+top_50_significant_and_upregulated_genes_het_db <- rownames(double_significant_upregulated_genes_het_db)[double_significant_upregulated_genes_het_db$log2FoldChange > 6.07]
+
+# Below we find the top 50 downregulated genes that are also significant
+double_significant_downregulated_genes_het_db <- DGE.results.shrink_het_db[final_downregulated_genes_het_db, ]
+top_50_significant_and_downregulated_genes_het_db <- rownames(double_significant_downregulated_genes_het_db)[double_significant_downregulated_genes_het_db$log2FoldChange < -2.48]
 ```
 
 Below we create a heatmap using complexheatmap for the top 50 upregulated genes. We see that diabetes sample 2 is more like the heterozygous samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the heterozygous and diabetes samples, but closer to the other diabetes samples.
@@ -658,6 +750,22 @@ Heatmap(z.mat, name = "z-score",
         split=cutGroups)
 ```
 
+Below we create a heatmap using complexheatmap for the top 50 upregulated genes being significant in terms of p-value. 
+
+```{r fig.height=10}
+DGEgenes_het_db_top_fifty_upregulated <- top_50_significant_and_upregulated_genes_het_db
+rlog.dge_het_db_top_fifty_upregulated <- DESeq.rlog_het_db[DGEgenes_het_db_top_fifty_upregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_db_top_fifty_upregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "HET vs. DB: Top 50 Significant and Upregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
 Below we do the same for the top fifty downregulated genes.
 
 ```{r fig.height=10}
@@ -668,7 +776,23 @@ hcDat <- hclust(dist(z.mat))
 cutGroups <- cutree(hcDat, h=4)
 Heatmap(z.mat, name = "z-score",
         column_title = "DB vs. HET: Top 50 Downregulated Genes",
-        column_title_gp = gpar(fontsize = 30),
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+Below we create a heatmap using complexheatmap for the top 50 downregulated genes being significant in terms of p-value. 
+
+```{r fig.height=10}
+DGEgenes_het_db_top_fifty_downregulated <- top_50_significant_and_downregulated_genes_het_db
+rlog.dge_het_db_top_fifty_downregulated <- DESeq.rlog_het_db[DGEgenes_het_db_top_fifty_downregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_het_db_top_fifty_downregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "HET vs. DB: Top 50 Significant and Downregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
         show_row_name = TRUE,
         cluster_columns = FALSE,
         split=cutGroups)
@@ -752,17 +876,40 @@ Below we change the names of the genes from the ensembl IDs to the external gene
 ```{r}
 ens_db_wt <- c(rownames(DESeq.ds_db_wt))
 ens_db_wt <- gsub('\\..*', '', ens_db_wt)
-mouse = useMart(biomart="ensembl", dataset="mmusculus_gene_ensembl")
+mouse = useMart("ensembl", dataset="mmusculus_gene_ensembl")
 mapped_names <- getBM(attributes=c('ensembl_gene_id',
                       'external_gene_name'),
          values = ens_db_wt,
          mart = mouse)
 ens_df_db_wt <- as.data.frame(ens_db_wt)
 colnames(ens_df_db_wt) <- "ensembl_gene_id"
-idmap_db_wt = merge(x = ens_df_db_wt, y = mapped_names, by="ensembl_gene_id", all.x=TRUE)
+mapped_names_ordered_db_wt <- mapped_names[order(match(mapped_names[,1],ens_df_db_wt[,1])),]
+idmap_db_wt = merge(x = ens_df_db_wt, y = mapped_names_ordered_db_wt, by="ensembl_gene_id", all.x=TRUE)
 idmap_db_wt$external_gene_name <- ifelse(is.na(idmap_db_wt$external_gene_name), idmap_db_wt$ensembl_gene_id, idmap_db_wt$external_gene_name)
-row.names(DESeq.ds_db_wt) <- make.names(idmap_db_wt[,2])
+idmap_ordered_db_wt <- idmap_db_wt[order(match(idmap_db_wt[,1],ens_df_db_wt[,1])),]
+rownames(DESeq.ds_db_wt) <- make.names(idmap_ordered_db_wt[,2])
 ```
+
+
+Below we show that there are 541 Ensembl IDs that did not have an external count value and needed to be given their Ensembl ID value instead of the NA value given to these genes. We did that in the code above. 
+
+```{r}
+library(VennDiagram)
+all_genes_db_wt <- ens_db_wt
+overlap_all_genes <- intersect(all_genes_db_wt, mapped_names$ensembl_gene_id)
+grid.newpage()
+venn.plot <- draw.pairwise.venn(area1 = length(mapped_names$ensembl_gene_id),
+                           area2 = length(all_genes_db_wt),
+                           cross.area = length(overlap_all_genes),
+                           c("Mapping Ids", "Count Ensembl IDs"),
+                           scaled = TRUE,
+                           fill = c("green", "blue"),
+                           cex = 1.5,
+                           cat.cex = 1.5,
+                           cat.pos = c(320, 25),
+                           cat.dist = .05) 
+```
+
 
 
 ### Calculating and applying the size factor for diabetic and wild type only
@@ -849,6 +996,7 @@ DGEgenes_db_wt <- subset(DGE.results_db_wt, padj < 0.05) %>% rownames
 row.names(DESeq.rlog_db_wt) <- rownames(DGE.results_db_wt)
 rlog.dge_db_wt <- DESeq.rlog_db_wt[DGEgenes_db_wt, ] %>% assay
 z.mat <- t(scale(t(rlog.dge_db_wt), center=TRUE, scale=TRUE))
+colnames(z.mat) <- c('DB_1', 'DB_2', 'DB_3', 'WT_1', 'WT_2', 'WT_3')
 hcDat <- hclust(dist(z.mat))
 cutGroups <- cutree(hcDat, h=4)
 Heatmap(z.mat, name = "z-score",
@@ -870,7 +1018,7 @@ abline(h = -1, col = 'red')
 
 Below we create a volcano plot showing the significant genes with respect to logFC change and p-value in red for the comparison between diabetic and wild-type mice.
 
-```{r fig.width = 12, fig.height = 8}
+```{r fig.width = 20, fig.height = 10}
 library(EnhancedVolcano)
 vp1_db_wt <-EnhancedVolcano(DGE.results_db_wt,lab =rownames(DGE.results_db_wt),x ='log2FoldChange',y ='padj', pCutoff = 0.05, title = "DB vs WT")
 print(vp1_db_wt)
@@ -903,9 +1051,16 @@ final_downregulated_genes_db_wt <- downregulated_genes_db_wt[finding_downregulat
 print(length(final_upregulated_genes_db_wt))
 print(length(final_downregulated_genes_db_wt))
 
+# Below we find the top 50 upregulated genes that are also significant
+double_significant_upregulated_genes <- DGE.results.shrink_db_wt[final_upregulated_genes_db_wt, ]
+top_50_significant_and_upregulated_genes <- rownames(double_significant_upregulated_genes)[double_significant_upregulated_genes$log2FoldChange > 5.6]
+
+# Below we find the top 50 downregulated genes that are also significant
+double_significant_downregulated_genes <- DGE.results.shrink_db_wt[final_downregulated_genes_db_wt, ]
+top_50_significant_and_downregulated_genes <- rownames(double_significant_downregulated_genes)[double_significant_downregulated_genes$log2FoldChange < -2.42]
 ```
 
-Below we create a heatmap using complexheatmap for the top 50 upregulated genes. We see that diabetes sample 2 is more like the wild type samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the wild type and diabetes samples, but closer to the other diabetes samples.
+Below we create a heatmap using complexheatmap for the top 50 upregulated genes without necessarily being significant in terms of p-value. We see that diabetes sample 2 is more like the wild type samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the wild type and diabetes samples, but closer to the other diabetes samples.
 
 ```{r fig.height=10}
 DGEgenes_db_wt_top_fifty_upregulated <- top_fifty_upregulated_genes_db_wt
@@ -920,6 +1075,23 @@ Heatmap(z.mat, name = "z-score",
         cluster_columns = FALSE,
         split=cutGroups)
 ```
+
+Below we create a heatmap using complexheatmap for the top 50 upregulated genes being significant in terms of p-value. 
+
+```{r fig.height=10}
+DGEgenes_db_wt_top_fifty_upregulated <- top_50_significant_and_upregulated_genes
+rlog.dge_db_wt_top_fifty_upregulated <- DESeq.rlog_db_wt[DGEgenes_db_wt_top_fifty_upregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_db_wt_top_fifty_upregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. WT: Top 50 Significant and Upregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
 
 Below we create a heatmap using complexheatmap for the top 50 downregulated genes. We see that diabetes sample 2 is more like the wild type samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the wild type and diabetes samples, but closer to the other diabetes samples.
 
@@ -936,6 +1108,23 @@ Heatmap(z.mat, name = "z-score",
         cluster_columns = FALSE,
         split=cutGroups)
 ```
+
+Below we create a heatmap using complexheatmap for the top 50 downregulated genes being significant in terms of p-value. 
+
+```{r fig.height=10}
+DGEgenes_db_wt_top_fifty_downregulated <- top_50_significant_and_downregulated_genes
+rlog.dge_db_wt_top_fifty_downregulated <- DESeq.rlog_db_wt[DGEgenes_db_wt_top_fifty_downregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_db_wt_top_fifty_downregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. WT: Top 50 Significant and Downregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
 
 Next we show the effect of the shrinkage on the MA plot:
 
@@ -1231,6 +1420,7 @@ DGEgenes_paper_db_wt <- subset(DGE.results_paper_db_wt, padj < 0.05) %>% rowname
 row.names(DESeq.rlog_paper_db_wt) <- rownames(DGE.results_paper_db_wt)
 rlog.dge_paper_db_wt <- DESeq.rlog_paper_db_wt[DGEgenes_paper_db_wt, ] %>% assay
 z.mat <- t(scale(t(rlog.dge_paper_db_wt), center=TRUE, scale=TRUE))
+colnames(z.mat) <- c('WT_1', 'WT_2', 'WT_3', 'DB_1', 'DB_2', 'DB_3')
 hcDat <- hclust(dist(z.mat))
 cutGroups <- cutree(hcDat, h=4)
 Heatmap(z.mat, name = "z-score",
@@ -1284,6 +1474,14 @@ finding_downregulated_genes_in_significant_genes_paper_db_wt <- downregulated_ge
 final_downregulated_genes_paper_db_wt <- downregulated_genes_paper_db_wt[finding_downregulated_genes_in_significant_genes_paper_db_wt]
 print(length(final_upregulated_genes_paper_db_wt))
 print(length(final_downregulated_genes_paper_db_wt))
+
+# Below we find the top 50 upregulated genes that are also significant
+double_significant_upregulated_genes_paper <- DGE.results.shrink_paper_db_wt[final_upregulated_genes_paper_db_wt, ]
+top_50_significant_and_upregulated_genes_paper <- rownames(double_significant_upregulated_genes_paper)[double_significant_upregulated_genes_paper$log2FoldChange > 5.6]
+
+# Below we find the top 50 downregulated genes that are also significant
+double_significant_downregulated_genes_paper <- DGE.results.shrink_paper_db_wt[final_downregulated_genes_paper_db_wt, ]
+top_50_significant_and_downregulated_genes_paper <- rownames(double_significant_downregulated_genes_paper)[double_significant_downregulated_genes_paper$log2FoldChange < -2.42]
 ```
 
 In the paper, the gene Gc is included in the Top 50 genes in terms of increased expression. Below we make a table showing that Gc should not be in the top 50 upregulated genes. This suggests to us that the authors included this gene in their top 50 most important genes because they either wanted to specifically show it because they think it is important, or they put a larger weight on adjusted p-value. This suggests that other genes would also be scored differently than just using the log2 FC value for upregulation and downregulation. Therefore, our Top 50 upregulated and Top 50 downregulated genes should not match with those from the paper.
@@ -1310,6 +1508,23 @@ Heatmap(z.mat, name = "z-score",
         split=cutGroups)
 ```
 
+Below we create a heatmap using complexheatmap for the top 50 upregulated genes being significant in terms of p-value. 
+
+```{r fig.height=10}
+DGEgenes_paper_db_wt_top_fifty_upregulated <- top_50_significant_and_upregulated_genes_paper
+rlog.dge_paper_db_wt_top_fifty_upregulated <- DESeq.rlog_paper_db_wt[DGEgenes_paper_db_wt_top_fifty_upregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_paper_db_wt_top_fifty_upregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. WT: Top 50 Significant and Upregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
+
 Below we create a heatmap using complexheatmap for the top 50 downregulated genes with respect to log FC value. We see that diabetes sample 2 is more like the wild type samples than the other two diabetes samples. This makes sense because it is what we saw from the PCA as well, as diabetes sample 2 was in between the wild type and diabetes samples, but closer to the other diabetes samples.
 
 ```{r fig.height=10}
@@ -1325,6 +1540,23 @@ Heatmap(z.mat, name = "z-score",
         cluster_columns = FALSE,
         split=cutGroups)
 ```
+
+Below we create a heatmap using complexheatmap for the top 50 downregulated genes being significant in terms of p-value. 
+
+```{r fig.height=10}
+DGEgenes_paper_db_wt_top_fifty_downregulated <- top_50_significant_and_downregulated_genes_paper
+rlog.dge_paper_db_wt_top_fifty_downregulated <- DESeq.rlog_paper_db_wt[DGEgenes_paper_db_wt_top_fifty_downregulated, ] %>% assay
+z.mat <- t(scale(t(rlog.dge_paper_db_wt_top_fifty_downregulated), center=TRUE, scale=TRUE))
+hcDat <- hclust(dist(z.mat))
+cutGroups <- cutree(hcDat, h=4)
+Heatmap(z.mat, name = "z-score",
+        column_title = "DB vs. WT: Top 50 Significant and Downregulated Genes",
+        column_title_gp = gpar(fontsize = 10),
+        show_row_name = TRUE,
+        cluster_columns = FALSE,
+        split=cutGroups)
+```
+
 
 Below we show the logFC values for the top 50 upregulated genes which are also significant by p-value. 
 
@@ -1392,6 +1624,7 @@ DGE.results.shrink_paper_db_wt['Pdx1', ]
 DGE.results.shrink_paper_db_wt['Mafa', ]
 ```
 
+Using the counts matrix from the publication, we found consistent results with our count matrix output. In both analyses, Pdx1, MafA, and Glut2 are shown to be significant at our threshold log FC < -1. These three genes are also significant with respect to adjusted p-value as well. The results for the publication’s counts are tabulated below, along with the code used to generate them.
 
 
 
