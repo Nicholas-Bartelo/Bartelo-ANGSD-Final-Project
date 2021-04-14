@@ -30,6 +30,10 @@ Contains the output from featureCounts from our pipeline and the publication.
 
 Contains all figures from the final writeup. These figures can be used to populate the RMD exactly as it looks in the HTML by opening the RMD and copying the figures to an RStudio session. 
 
+### Final Project Writeup
+
+Contains the HTML and RMD file for our final writeup. 
+
 ### IGV Screenshot
 
 Contains the screenshot from IGV showing that we have stranded reads.
