@@ -38,6 +38,10 @@ Contains the HTML and RMD file for our final writeup.
 
 Contains the screenshot from IGV showing that we have stranded reads.
 
+### Presentation Slides
+
+Contains a pdf of the slides used for the final presentation in class.
+
 ### bamqc files
 
 Contains all bamQC files used to show potential problems with the aligned files.
