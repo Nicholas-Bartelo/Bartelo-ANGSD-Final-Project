@@ -1,7 +1,7 @@
 ---
 title: "Comparing Gene Expression Of Islets From Diabetic, Heterozygous, and Wild-Type Mice To Identify Genes Impacted By Dedifferentiation"
 author: "Nicholas Bartelo"
-date: "4/14/2021"
+date: "4/15/2021"
 output: 
   html_document: 
     toc: yes
@@ -876,7 +876,7 @@ DGE.results.shrink_paper_db_wt['Pdx1', ]
 DGE.results.shrink_paper_db_wt['Mafa', ]
 ```
 
-Based on these results, we concluded that the db/db model is not as strong of an animal model for dedifferentiation as concluded by the paper, due to the lack of downregulation in Ins1 and Ins2 in diabetic samples demonstrated by the downstream analyses. One would expect these genes to be significantly downregulated for this animal model to best demonstrate use as a model for dedifferentiation.
+Based on these results, we concluded that the db/db model is not as strong of an animal model for dedifferentiation as concluded by the paper, due to the lack of downregulation in Ins1 and Ins2 in diabetic samples demonstrated by the downstream analyses. One would expect these genes to be significantly downregulated for this animal model to best demonstrate use as a model for dedifferentiation. However, the authors performed qPCR, which showed that Ins1 and Ins2 were significantly reduced in the diabetic samples. After discussing this with Merv, he told me that generally qPCR is more reliable than RNA-seq. In spite of this, we believed that the authors still should have mentioned the RNA-seq result in the paper, or a reviewer should have asked for it to be presented. Therefore, the culmination of work by the authors has demonstrated that the db/db mice represent a good animal model for dedifferentiation, although not all results agree.
 
 # Discussion 
 
