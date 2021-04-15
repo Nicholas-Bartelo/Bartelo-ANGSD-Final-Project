@@ -455,7 +455,7 @@ top_50_significant_and_downregulated_genes_paper <- rownames(double_significant_
 
 ## Significant Gene Numbers
 
-Below we form a table for the number of significant genes by p-value, top 3 most significant genes, number of significant genes by p-value and log 2 FC, and number of upregulated and downregulated genes, for all comparisons between samples from our counts. We also include these results for the comparison of diabetic vs. wild-type mice using the counts from the published paper.
+Below we form a table for the number of significant genes by p-value, top 3 most significant genes, number of significant genes by p-value and log 2 FC, and number of upregulated and downregulated genes, for all comparisons between samples from our counts. A gene was significant by p-value if the gene's adjusted p-value was lower than 0.05. A gene was significant with respect to log fold change if it had a log fold change value greater than 2, which represented a significant upregulated gene, or less than -2, which represented a significant downregulated gene. We also include these results for the comparison of diabetic vs. wild-type mice using the counts from the published paper.
 
 Source Of Counts Used |	Samples Compared |	Number of Significant Genes By P-value |	Top 3 Significant Genes By P-value |	Number of Significant Genes By P-value and Log2 FC |	Number of Upregulated/Downregulated Genes Significant By P-value and Log2 FC
 --- | --- | --- | --- | --- | ---
