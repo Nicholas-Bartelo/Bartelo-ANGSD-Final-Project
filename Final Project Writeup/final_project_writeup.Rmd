@@ -455,7 +455,7 @@ top_50_significant_and_downregulated_genes_paper <- rownames(double_significant_
 
 ## Significant Gene Numbers
 
-Below we form a table for the number of significant genes by p-value, top 3 most significant genes, number of significant genes by p-value and log 2 FC, and number of upregulated and downregulated genes, for all comparisons between samples from our counts. A gene was significant by p-value if the gene's adjusted p-value was lower than 0.05. A gene was significant with respect to log fold change if it had a log fold change value greater than 2, which represented a significant upregulated gene, or less than -2, which represented a significant downregulated gene. We also include these results for the comparison of diabetic vs. wild-type mice using the counts from the published paper.
+Below we form a table for the number of significant genes by p-value, top 3 most significant genes, number of significant genes by p-value and log 2 FC, and number of upregulated and downregulated genes, for all comparisons between samples from our counts. A gene was significant by p-value if the gene's adjusted p-value was smaller than 0.05. A gene was significant with respect to fold change if it had a log2 fold change value greater than 1, which represented a significant upregulated gene, or less than -1, which represented a significant downregulated gene. We also include these results for the comparison of diabetic vs. wild-type mice using the counts from the published paper.
 
 Source Of Counts Used |	Samples Compared |	Number of Significant Genes By P-value |	Top 3 Significant Genes By P-value |	Number of Significant Genes By P-value and Log2 FC |	Number of Upregulated/Downregulated Genes Significant By P-value and Log2 FC
 --- | --- | --- | --- | --- | ---
@@ -504,7 +504,7 @@ Heatmap(z.mat, name = "z-score",
 knitr::include_graphics("heatmap_all_genes_het_wt.PNG")
 ```
 
-In the publication, the authors showed the top 25 upregulated and downregulated genes for the comparison between heterozygous and wild-type. However, they did not specify a log2 FC cutoff which made the genes significant in respect to fold change. It is likely that the authors used genes without fold changes greater than 2 for upregulated genes or less than 2 for downregulated genes. However, we believe that only genes that meet these standards should be included because these show a significant upregulation or downregulation between samples. Therefore, we were able to produce a heatmap for the top 27 upregulated genes, which contained all significant genes by p-value also upregulated over a log fold change greater than 2, but only the top 8 downregulated genes satisfied our condition. These genes are shown in the downregulated genes heatmap below. The code used to create the heatmaps for the top 27 upregulated genes and top 8 downregulated genes for heterozygous vs. wild-type are shown below, followed by importing the heatmaps.
+In the publication, the authors showed the top 25 upregulated and downregulated genes for the comparison between heterozygous and wild-type. However, they did not specify a log2 FC cutoff which made the genes significant in respect to fold change. It is likely that the authors used genes without log2 fold changes greater than 1 for upregulated genes or less than -1 for downregulated genes. However, we believe that only genes that meet these standards should be included because these show a significant upregulation or downregulation between samples. Therefore, we were able to produce a heatmap for the top 27 upregulated genes, which contained all significant genes by p-value also upregulated over a log2 fold change greater than 1, but only the top 8 downregulated genes satisfied our condition. These genes are shown in the downregulated genes heatmap below. The code used to create the heatmaps for the top 27 upregulated genes and top 8 downregulated genes for heterozygous vs. wild-type are shown below, followed by importing the heatmaps.
 
 
 ```{r,eval=FALSE}
@@ -858,7 +858,7 @@ DGE.results.shrink_db_wt['Pdx1', ]
 DGE.results.shrink_db_wt['Mafa', ]
 ```
 
-Using the counts matrix from the publication, we found consistent results with our count matrix output. In both analyses, Pdx1, MafA, and Glut2 are shown to be significant at our threshold log FC < -1. These three genes are also significant with respect to adjusted p-value as well. The results for the publication’s counts are tabulated below, along with the code used to generate them.
+Using the counts matrix from the publication, we found consistent results with our count matrix output. In both analyses, Pdx1, MafA, and Glut2 are shown to be significant at our threshold log2 FC < -1. These three genes are also significant with respect to adjusted p-value as well. The results for the publication’s counts are tabulated below, along with the code used to generate them.
 
 Gene |	Shrunken Log FC Value |	Adjusted p-value
 --- | --- | ---
