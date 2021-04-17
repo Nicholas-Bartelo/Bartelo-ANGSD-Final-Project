@@ -32,7 +32,7 @@ Contains all figures from the final writeup. These figures can be used to popula
 
 ### Final Project Writeup
 
-Contains the HTML and RMD file for our final writeup. 
+Contains the HTML and RMD file for our final writeup. To render the RMD on your own computer, copy both the RMD file in this folder and the figures within the Figures For Final Writeup folder to the same working directory. It should then be possible to run all code blocks to populate the same output as seen in the HTML file.
 
 ### IGV Screenshot
 
